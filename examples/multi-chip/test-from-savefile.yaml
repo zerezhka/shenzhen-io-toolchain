@@ -1,0 +1,15 @@
+formatVersion: "2.0"
+cases:
+  - name: "Fake Surveillance Camera - From Save File"
+    cycleLimit: 1000
+    
+    # Load chips and wiring from save file
+    saveFile: "../../third_party/solutions/000-fake-surveillance-camera/fake-surveillance-camera-0.txt"
+    
+    # No manual connections needed - auto-extracted from [traces]!
+    
+    # For now, just test that it assembles and runs
+    # (No inputs/outputs defined yet - would need to map to actual puzzle I/O)
+    inputs: []
+    expectedOutputs: []
+

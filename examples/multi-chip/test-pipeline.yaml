@@ -1,0 +1,34 @@
+formatVersion: "2.0"
+cases:
+  - name: "Two-Chip Pipeline: (x * 2) + 10"
+    cycleLimit: 1000
+    
+    # Define two chips
+    chips:
+      - id: "doubler"
+        type: "MC6000"
+        program: "chip1-doubler.asm"
+      - id: "adder"
+        type: "MC6000"
+        program: "chip2-adder.asm"
+    
+    # Wire chip1's output (p1) to chip2's input (p0)
+    connections:
+      - from: "doubler.p1"
+        to: "adder.p0"
+        type: "simple"
+    
+    # External inputs: feed values into chip1's p0
+    inputs:
+      - target: "doubler.p0"
+        id: "external_input"
+        samples: [5, 10, 15]
+    
+    # Expected outputs: read from chip2's p1
+    # Expected: (5*2)+10=20, (10*2)+10=30, (15*2)+10=40
+    expectedOutputs:
+      - source: "adder.p1"
+        streamId: "final_output"
+        mode: "order-only"
+        values: [20, 30, 40]
+

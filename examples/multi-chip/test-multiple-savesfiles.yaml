@@ -1,0 +1,20 @@
+formatVersion: "2.0"
+cases:
+  - name: "Animated Sign - From Save"
+    cycleLimit: 2000
+    saveFile: "../../third_party/solutions/030-animated-esports-sign/animated-esports-sign-0.txt"
+    inputs: []
+    expectedOutputs: []
+    
+  - name: "Pulse Generator - From Save"
+    cycleLimit: 2000
+    saveFile: "../../third_party/solutions/020-diagnostic-pulse-generator/diagnostic-pulse-generator-0.txt"
+    inputs: []
+    expectedOutputs: []
+    
+  - name: "Harmonic Maximization - From Save"
+    cycleLimit: 2000
+    saveFile: "../../third_party/solutions/050-harmonic-maximization-engine/harmonic-maximization-engine-0.txt"
+    inputs: []
+    expectedOutputs: []
+

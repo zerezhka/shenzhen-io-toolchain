@@ -61,6 +61,7 @@ Or use the wrapper script in the project root:
 ### Testing & Validation
 - **[TESTING.md](TESTING.md)** — Testing guide (unit tests and examples)
 - **[docs/validation-results.md](docs/validation-results.md)** — Real-world compatibility (483 solutions, 100%)
+- **[docs/community-test-data.md](docs/community-test-data.md)** — Creating test cases from community screenshots
 
 ### Technical Details
 - **[docs/instruction-set.md](docs/instruction-set.md)** — Complete instruction reference
@@ -82,7 +83,7 @@ Then reload VS Code. See `docs/editor-vscode.md` for detailed instructions.
 
 ## Using local original game files (optional)
 
-You can keep a local copy of original Shenzhen I/O content (e.g., `messages.en/`, `descriptions.en/`, signal dumps like `nulyu.txt`) for convenience when authoring tests and debugging.
+You can keep a local copy of original Shenzhen I/O content (e.g., `messages.en/`, `descriptions.en/`) for convenience when extracting puzzle metadata.
 
 - These files are **not meant to be committed**.
 - The repo ignores `/originalgamefilessteam/` by default.

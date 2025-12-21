@@ -6,6 +6,7 @@ namespace Sio.TestRunner.Model
     public sealed class ExpectedOutput
     {
         public string StreamId { get; set; }
+        public string Source { get; set; }  // For multi-chip: "chip2.p1"
         public string Mode { get; set; } // "cycle-exact" or "order-only"
         public List<OutputEvent> Events { get; set; } // For cycle-exact
         public List<int> Values { get; set; } // For order-only
