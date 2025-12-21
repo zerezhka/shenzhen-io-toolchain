@@ -11,6 +11,10 @@
     <PackageReference Include="YamlDotNet" Version="13.7.1" />
     <PackageReference Include="NJsonSchema" Version="11.0.2" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sio.Simulator\Sio.Simulator.csproj" />
+  </ItemGroup>
 </Project>
 
 

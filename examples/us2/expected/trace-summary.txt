@@ -1,0 +1,12 @@
+# Expected trace summary for examples/us2/program.asm
+# Run: sio simulate examples/us2/program.asm --cycles 100 --trace
+
+# Should show:
+# - mov instructions setting acc and p0
+# - add incrementing acc
+# - teq testing equality
+# - jmp instructions for looping
+# - Final state: ACC = 0, p0 = 5 (last value written)
+
+# Deterministic: running twice should produce identical trace
+

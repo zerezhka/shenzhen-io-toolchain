@@ -1,0 +1,42 @@
+{
+  "name": "shenzhen-io",
+  "displayName": "Shenzhen I/O Assembly",
+  "description": "Syntax highlighting for Shenzhen I/O assembly language",
+  "version": "0.1.0",
+  "publisher": "shenzhen-simulator-io",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "shenzhen-io",
+        "aliases": [
+          "Shenzhen I/O",
+          "shenzhen-io",
+          "sio"
+        ],
+        "extensions": [
+          ".asm"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "shenzhen-io",
+        "scopeName": "source.shenzhen-io",
+        "path": "./syntaxes/shenzhen-io.tmLanguage.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/shenzhen-simulator-io"
+  },
+  "license": "MIT"
+}
+

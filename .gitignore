@@ -1,4 +1,7 @@
 /originalgamefilessteam/
+/third_party/solutions/
+/third_party/solutions-shiawasenahikari/
+/third_party/solutions-stinkingbanana/
 /.tmp/
 
 # macOS / editor
@@ -13,3 +16,6 @@
 *.suo
 *.userosscache
 *.sln.docstates
+
+# local notes (not tracked)
+/local/

@@ -1,0 +1,22 @@
+formatVersion: "1.0"
+cases:
+  - name: "Adder with Inputs"
+    program:
+      path: "adder.asm"
+    cycleLimit: 50
+    ports:
+      count: 6
+    portMappings:
+      p0: "input_a"
+      p1: "input_b"
+      p2: "output"
+    inputs:
+      - id: "input_a"
+        samples: [10, 20, 30]
+      - id: "input_b"
+        samples: [5, 15, 25]
+    expectedOutputs:
+      - streamId: "output"
+        mode: "order-only"
+        values: [15, 35, 55]
+

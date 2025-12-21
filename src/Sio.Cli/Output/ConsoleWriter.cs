@@ -26,6 +26,11 @@ namespace Sio.Cli.Output
                 WriteInfoLine(k + ": " + (kv[k] ?? ""));
             }
         }
+
+        public void WriteSuccessLine(string line)
+        {
+            Console.Out.WriteLine(line ?? "");
+        }
     }
 }
 

@@ -1,0 +1,26 @@
+formatVersion: "1.0"
+cases:
+  - name: "Counter - Cycle Exact"
+    program:
+      path: "../us2/program.asm"
+    cycleLimit: 100
+    ports:
+      count: 6
+    portMappings:
+      p0: "output"
+    inputs: []
+    expectedOutputs:
+      - streamId: "output"
+        mode: "cycle-exact"
+        events:
+          - cycle: 1
+            value: 0
+          - cycle: 5
+            value: 1
+          - cycle: 9
+            value: 2
+          - cycle: 13
+            value: 3
+          - cycle: 17
+            value: 4
+

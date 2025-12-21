@@ -1,0 +1,15 @@
+#!/bin/bash
+# Wrapper script for sio CLI
+# Usage: ./sio <command> [args...]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXE="$SCRIPT_DIR/src/Sio.Cli/bin/Debug/net472/sio.exe"
+
+if [ ! -f "$EXE" ]; then
+    echo "Error: sio.exe not found at $EXE" >&2
+    echo "Please build the project first: cd src && msbuild Sio.Cli/Sio.Cli.csproj" >&2
+    exit 1
+fi
+
+mono "$EXE" "$@"
+

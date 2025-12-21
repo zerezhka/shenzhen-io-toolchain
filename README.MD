@@ -19,21 +19,49 @@ Build, test, and validate Shenzhen I/O assembly **outside the game** with a **CL
 
 Early stage (spec-first). See the current feature spec at `specs/001-sio-toolchain/spec.md`.
 
-## CLI (planned)
+## CLI
 
-- `sio assemble input.asm -o output.txt`
-- `sio simulate program.asm --trace`
-- `sio test level.yaml`
+The CLI is located at `src/Sio.Cli/bin/Debug/net472/sio.exe`. On macOS/Linux with Mono, run it with:
 
-## Repository layout (planned)
+```bash
+mono src/Sio.Cli/bin/Debug/net472/sio.exe <command> [args...]
+```
+
+Or use the wrapper script in the project root:
+
+```bash
+./sio <command> [args...]
+```
+
+**Commands:**
+- `sio assemble input.asm -o output.txt` - Assemble extended assembly to vanilla
+- `sio simulate program.asm --trace` - Simulate a program with optional tracing
+- `sio test level.yaml` - Run test cases from a YAML/JSON file
+
+## Repository layout
 
 - `src/` — implementation
-  - `Assembler/`
-  - `Simulator/`
-  - `TestRunner/`
-- `schemas/` — test definition schemas
+  - `Sio.Assembler/` — assembler/preprocessor
+  - `Sio.Simulator/` — cycle-accurate simulator
+  - `Sio.TestRunner/` — test runner
+  - `Sio.Cli/` — CLI entrypoint
+- `editor/` — editor support
+  - `vscode-shenzhen-io/` — VS Code syntax highlighting extension
 - `examples/` — sample programs + tests
 - `docs/` — instruction set, timing model, and usage notes
+- `specs/` — feature specifications and design docs
+
+## Editor Support
+
+### VS Code Syntax Highlighting
+
+Install the VS Code extension for syntax highlighting:
+
+```bash
+cp -r editor/vscode-shenzhen-io ~/.vscode/extensions/shenzhen-io-0.1.0
+```
+
+Then reload VS Code. See `docs/editor-vscode.md` for detailed instructions.
 
 ## Using local original game files (optional)
 

@@ -57,20 +57,20 @@
 
 ### Implementation (US1)
 
-- [ ] T022 [US1] Add third-party attribution for omaskery reference in `third_party/omaskery-shenzhen.io-assembler/README.md` and `third_party/omaskery-shenzhen.io-assembler/LICENSE` (copy MIT text, include upstream author/year)
-- [ ] T023 [US1] Add US1 preprocessor tests (include cycles, const/alias, comment stripping) in `tests/Sio.UnitTests/Assembler/PreprocessorTests.cs`
-- [ ] T024 [US1] Implement source file loader + include resolution in `src/Sio.Assembler/IO/SourceLoader.cs` (include paths, cycle detection)
-- [ ] T025 [US1] Implement block comment stripping in `src/Sio.Assembler/Preprocessor/CommentStripper.cs`
-- [ ] T026 [US1] Implement `const` handling in `src/Sio.Assembler/Preprocessor/ConstTable.cs`
-- [ ] T027 [US1] Implement `alias` handling in `src/Sio.Assembler/Preprocessor/AliasTable.cs`
-- [ ] T028 [US1] Implement preprocessing pipeline in `src/Sio.Assembler/Preprocessor/Preprocessor.cs` (includes → comments → const/alias substitution)
-- [ ] T029 [US1] Add tokenizer/parser unit tests in `tests/Sio.UnitTests/Assembler/ParserTests.cs` (labels, instructions, operands, error locations)
-- [ ] T030 [US1] Implement vanilla assembly tokenizer in `src/Sio.Assembler/Parse/Tokenizer.cs`
-- [ ] T031 [US1] Implement parser to an AST/IR in `src/Sio.Assembler/Parse/Parser.cs` (labels, instructions, operands)
-- [ ] T032 [US1] Implement renderer back to vanilla assembly in `src/Sio.Assembler/Emit/VanillaEmitter.cs`
-- [ ] T033 [US1] Implement assembler diagnostics with file+line+include chain in `src/Sio.Assembler/Diagnostics/Diagnostic.cs`
-- [ ] T034 [US1] Wire CLI command `assemble` in `src/Sio.Cli/Commands/AssembleCommand.cs`
-- [ ] T035 [US1] Add US1 example inputs/outputs under `examples/us1/extended/` and `examples/us1/expected/`
+- [X] T022 [US1] Add third-party attribution for omaskery reference in `third_party/omaskery-shenzhen.io-assembler/README.md` and `third_party/omaskery-shenzhen.io-assembler/LICENSE` (copy MIT text, include upstream author/year)
+- [X] T023 [US1] Add US1 preprocessor tests (include cycles, const/alias, comment stripping) in `tests/Sio.UnitTests/Assembler/PreprocessorTests.cs`
+- [X] T024 [US1] Implement source file loader + include resolution in `src/Sio.Assembler/IO/SourceLoader.cs` (include paths, cycle detection)
+- [X] T025 [US1] Implement block comment stripping in `src/Sio.Assembler/Preprocessor/CommentStripper.cs`
+- [X] T026 [US1] Implement `const` handling in `src/Sio.Assembler/Preprocessor/ConstTable.cs`
+- [X] T027 [US1] Implement `alias` handling in `src/Sio.Assembler/Preprocessor/AliasTable.cs`
+- [X] T028 [US1] Implement preprocessing pipeline in `src/Sio.Assembler/Preprocessor/Preprocessor.cs` (includes → comments → const/alias substitution)
+- [X] T029 [US1] Add tokenizer/parser unit tests in `tests/Sio.UnitTests/Assembler/ParserTests.cs` (labels, instructions, operands, error locations)
+- [X] T030 [US1] Implement vanilla assembly tokenizer in `src/Sio.Assembler/Parse/Tokenizer.cs`
+- [X] T031 [US1] Implement parser to an AST/IR in `src/Sio.Assembler/Parse/Parser.cs` (labels, instructions, operands)
+- [X] T032 [US1] Implement renderer back to vanilla assembly in `src/Sio.Assembler/Emit/VanillaEmitter.cs`
+- [X] T033 [US1] Implement assembler diagnostics with file+line+include chain in `src/Sio.Assembler/Diagnostics/Diagnostic.cs`
+- [X] T034 [US1] Wire CLI command `assemble` in `src/Sio.Cli/Commands/AssembleCommand.cs`
+- [X] T035 [US1] Add US1 example inputs/outputs under `examples/us1/extended/` and `examples/us1/expected/`
 
 **Checkpoint**: US1 works end-to-end via CLI and produces deterministic, game-compatible output.
 
@@ -84,21 +84,21 @@
 
 ### Implementation (US2)
 
-- [ ] T036 [US2] Define canonical instruction list (single source of truth) in `src/Sio.Simulator/Isa/InstructionSetManifest.cs`
-- [ ] T037 [US2] Generate/version the instruction list documentation in `docs/instruction-set.md` (derived from manifest; includes a visible version header)
-- [ ] T038 [US2] Add “full instruction coverage” gate test in `tests/Sio.UnitTests/Simulator/InstructionCoverageTests.cs` (every manifest opcode must have an implementation)
-- [ ] T039 [US2] Implement vanilla program loader into executable IR in `src/Sio.Simulator/Parse/ProgramParser.cs`
-- [ ] T040 [US2] Implement CPU state model (`acc`, `dat`, `pc`, flags if needed) in `src/Sio.Simulator/Cpu/CpuState.cs`
-- [ ] T041 [US2] Implement cycle counter + stop conditions in `src/Sio.Simulator/Runtime/CycleController.cs`
-- [ ] T042 [US2] Implement port IO model (inputs provided by streams, outputs recorded) in `src/Sio.Simulator/Ports/PortBus.cs`
-- [ ] T043 [US2] Implement trace emitter in `src/Sio.Simulator/Trace/Tracer.cs` (instruction, cycle, port events)
-- [ ] T044 [US2] Implement instruction decoder in `src/Sio.Simulator/Isa/Decoder.cs`
-- [ ] T045 [US2] Implement full instruction set execution handlers in `src/Sio.Simulator/Isa/Instructions/` (one file per instruction or grouped, but full coverage required)
-- [ ] T046 [US2] Implement sleep/timing behavior (`slp`) in `src/Sio.Simulator/Isa/Instructions/Slp.cs` with correct cycle effects
-- [ ] T047 [US2] Implement deterministic scheduling of read/write effects in `src/Sio.Simulator/Runtime/StepEngine.cs`
-- [ ] T048 [US2] Wire CLI command `simulate` in `src/Sio.Cli/Commands/SimulateCommand.cs`
-- [ ] T049 [US2] Add US2 example program(s) under `examples/us2/` with deterministic expected trace summaries in `examples/us2/expected/`
-- [ ] T050 [US2] Document timing model details in `docs/timing-model.md` with “implemented vs pending” checklist tied to the manifest
+- [X] T036 [US2] Define canonical instruction list (single source of truth) in `src/Sio.Simulator/Isa/InstructionSetManifest.cs`
+- [X] T037 [US2] Generate/version the instruction list documentation in `docs/instruction-set.md` (derived from manifest; includes a visible version header)
+- [X] T038 [US2] Add "full instruction coverage" gate test in `tests/Sio.UnitTests/Simulator/InstructionCoverageTests.cs` (every manifest opcode must have an implementation)
+- [X] T039 [US2] Implement vanilla program loader into executable IR in `src/Sio.Simulator/Parse/ProgramParser.cs`
+- [X] T040 [US2] Implement CPU state model (`acc`, `dat`, `pc`, flags if needed) in `src/Sio.Simulator/Cpu/CpuState.cs`
+- [X] T041 [US2] Implement cycle counter + stop conditions in `src/Sio.Simulator/Runtime/CycleController.cs`
+- [X] T042 [US2] Implement port IO model (inputs provided by streams, outputs recorded) in `src/Sio.Simulator/Ports/PortBus.cs`
+- [X] T043 [US2] Implement trace emitter in `src/Sio.Simulator/Trace/Tracer.cs` (instruction, cycle, port events)
+- [X] T044 [US2] Implement instruction decoder in `src/Sio.Simulator/Isa/Decoder.cs`
+- [X] T045 [US2] Implement full instruction set execution handlers in `src/Sio.Simulator/Isa/Instructions/` (one file per instruction or grouped, but full coverage required) - **COMPLETE: All 15 instructions implemented**
+- [X] T046 [US2] Implement sleep/timing behavior (`slp`) in `src/Sio.Simulator/Isa/Instructions/Slp.cs` with correct cycle effects
+- [X] T047 [US2] Implement deterministic scheduling of read/write effects in `src/Sio.Simulator/Runtime/StepEngine.cs`
+- [X] T048 [US2] Wire CLI command `simulate` in `src/Sio.Cli/Commands/SimulateCommand.cs`
+- [X] T049 [US2] Add US2 example program(s) under `examples/us2/` with deterministic expected trace summaries in `examples/us2/expected/`
+- [X] T050 [US2] Document timing model details in `docs/timing-model.md` with "implemented vs pending" checklist tied to the manifest
 
 **Checkpoint**: US2 runs deterministically with trace; no “unsupported instruction” failures for valid programs (per spec).
 
@@ -112,18 +112,18 @@
 
 ### Implementation (US3)
 
-- [ ] T051 [US3] Add test runner model/validation unit tests in `tests/Sio.UnitTests/TestRunner/TestDefinitionModelTests.cs` (schema → model mapping, required fields)
-- [ ] T052 [US3] Implement in-memory test model mapping to schema in `src/Sio.TestRunner/Model/TestSuite.cs` and `src/Sio.TestRunner/Model/TestCase.cs`
-- [ ] T053 [US3] Implement port mapping resolver (`p0..pN` ↔ stream ids) in `src/Sio.TestRunner/Runtime/PortMapping.cs`
-- [ ] T054 [US3] Implement simulation harness wrapper in `src/Sio.TestRunner/Runtime/SimulatorHarness.cs` (invokes `Sio.Simulator` with streams and cycle limit)
-- [ ] T055 [US3] Add matcher unit tests for cycle-exact and order-only in `tests/Sio.UnitTests/TestRunner/MatcherTests.cs`
-- [ ] T056 [US3] Implement cycle-exact output matcher in `src/Sio.TestRunner/Assert/CycleExactMatcher.cs`
-- [ ] T057 [US3] Implement optional order-only matcher in `src/Sio.TestRunner/Assert/OrderOnlyMatcher.cs`
-- [ ] T058 [US3] Implement “LeetCode-like” failure diff rendering in `src/Sio.TestRunner/Output/DiffRenderer.cs` (expected vs actual, include cycles for cycle-exact)
-- [ ] T059 [US3] Implement metadata refs loader (local-only text assets) in `src/Sio.TestRunner/IO/MetadataLoader.cs` (do not embed content into outputs unless explicitly requested)
-- [ ] T060 [US3] Wire CLI command `test` in `src/Sio.Cli/Commands/TestCommand.cs`
-- [ ] T061 [US3] Add at least 3 runnable example test cases under `examples/us3/` (YAML/JSON), including one cycle-exact case and one order-only case
-- [ ] T062 [US3] Update `docs/test-format.md` to describe: stream inputs, port mappings, cycle-exact outputs, order-only option, and metadata refs
+- [X] T051 [US3] Add test runner model/validation unit tests in `tests/Sio.UnitTests/TestRunner/TestDefinitionModelTests.cs` (schema → model mapping, required fields)
+- [X] T052 [US3] Implement in-memory test model mapping to schema in `src/Sio.TestRunner/Model/TestSuite.cs` and `src/Sio.TestRunner/Model/TestCase.cs`
+- [X] T053 [US3] Implement port mapping resolver (`p0..pN` ↔ stream ids) in `src/Sio.TestRunner/Runtime/PortMapping.cs`
+- [X] T054 [US3] Implement simulation harness wrapper in `src/Sio.TestRunner/Runtime/SimulatorHarness.cs` (invokes `Sio.Simulator` with streams and cycle limit)
+- [X] T055 [US3] Add matcher unit tests for cycle-exact and order-only in `tests/Sio.UnitTests/TestRunner/MatcherTests.cs`
+- [X] T056 [US3] Implement cycle-exact output matcher in `src/Sio.TestRunner/Assert/CycleExactMatcher.cs`
+- [X] T057 [US3] Implement optional order-only matcher in `src/Sio.TestRunner/Assert/OrderOnlyMatcher.cs`
+- [X] T058 [US3] Implement "LeetCode-like" failure diff rendering in `src/Sio.TestRunner/Output/DiffRenderer.cs` (expected vs actual, include cycles for cycle-exact)
+- [X] T059 [US3] Implement metadata refs loader (local-only text assets) in `src/Sio.TestRunner/IO/MetadataLoader.cs` (do not embed content into outputs unless explicitly requested)
+- [X] T060 [US3] Wire CLI command `test` in `src/Sio.Cli/Commands/TestCommand.cs`
+- [X] T061 [US3] Add at least 3 runnable example test cases under `examples/us3/` (YAML/JSON), including one cycle-exact case and one order-only case
+- [X] T062 [US3] Update `docs/test-format.md` to describe: stream inputs, port mappings, cycle-exact outputs, order-only option, and metadata refs
 
 **Checkpoint**: US3 delivers deterministic pass/fail, clear diffs, and proper exit codes.
 
@@ -137,11 +137,11 @@
 
 ### Implementation (US4)
 
-- [ ] T063 [US4] Create VS Code extension/package skeleton under `editor/vscode-shenzhen-io/` (`package.json`, `README.md`)
-- [ ] T064 [US4] Add TextMate grammar for vanilla assembly in `editor/vscode-shenzhen-io/syntaxes/shenzhen-io.tmLanguage.json`
-- [ ] T065 [US4] Extend grammar for `const`, `alias`, `include`, and block comments in `editor/vscode-shenzhen-io/syntaxes/shenzhen-io.tmLanguage.json`
-- [ ] T066 [US4] Add language configuration (comment toggles, brackets) in `editor/vscode-shenzhen-io/language-configuration.json`
-- [ ] T067 [US4] Document installation steps in `docs/editor-vscode.md` and link from root `README.MD`
+- [X] T063 [US4] Create VS Code extension/package skeleton under `editor/vscode-shenzhen-io/` (`package.json`, `README.md`)
+- [X] T064 [US4] Add TextMate grammar for vanilla assembly in `editor/vscode-shenzhen-io/syntaxes/shenzhen-io.tmLanguage.json`
+- [X] T065 [US4] Extend grammar for `const`, `alias`, `include`, and block comments in `editor/vscode-shenzhen-io/syntaxes/shenzhen-io.tmLanguage.json`
+- [X] T066 [US4] Add language configuration (comment toggles, brackets) in `editor/vscode-shenzhen-io/language-configuration.json`
+- [X] T067 [US4] Document installation steps in `docs/editor-vscode.md` and link from root `README.MD`
 
 **Checkpoint**: Users can enable highlighting in VS Code in <5 minutes (SC-005).
 

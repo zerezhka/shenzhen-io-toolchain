@@ -5,16 +5,13 @@ namespace Sio.TestRunner.Model
 {
     public sealed class SignalStream
     {
-        public string Id { get; }
-        public int? Rate { get; }
-        public IReadOnlyList<int> Samples { get; }
+        public string Id { get; set; }
+        public int? Rate { get; set; }
+        public List<int> Samples { get; set; }
 
-        public SignalStream(string id, IReadOnlyList<int> samples, int? rate = null)
+        public SignalStream()
         {
-            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Stream id is required", nameof(id));
-            Id = id.Trim();
-            Samples = samples ?? throw new ArgumentNullException(nameof(samples));
-            Rate = rate;
+            Samples = new List<int>();
         }
     }
 }

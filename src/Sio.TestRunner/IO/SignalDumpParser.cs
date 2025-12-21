@@ -37,7 +37,12 @@ namespace Sio.TestRunner.IO
                 samples.Add(v);
             }
 
-            return new SignalStream(id, samples, rate);
+            return new SignalStream
+            {
+                Id = id,
+                Rate = rate,
+                Samples = samples
+            };
         }
 
         public static IList<SignalStream> ParseFile(string path)

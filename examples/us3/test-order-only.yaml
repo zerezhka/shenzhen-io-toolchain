@@ -1,0 +1,16 @@
+formatVersion: "1.0"
+cases:
+  - name: "Counter - Order Only"
+    program:
+      path: "../us2/program.asm"
+    cycleLimit: 100
+    ports:
+      count: 6
+    portMappings:
+      p0: "output"
+    inputs: []
+    expectedOutputs:
+      - streamId: "output"
+        mode: "order-only"
+        values: [0, 1, 2, 3, 4]
+

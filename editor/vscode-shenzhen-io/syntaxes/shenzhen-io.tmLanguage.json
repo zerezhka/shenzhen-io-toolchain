@@ -1,0 +1,123 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Shenzhen I/O Assembly",
+  "scopeName": "source.shenzhen-io",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#directives"
+    },
+    {
+      "include": "#labels"
+    },
+    {
+      "include": "#conditional-prefix"
+    },
+    {
+      "include": "#instructions"
+    },
+    {
+      "include": "#registers"
+    },
+    {
+      "include": "#ports"
+    },
+    {
+      "include": "#numbers"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.shenzhen-io",
+          "match": "#.*$"
+        },
+        {
+          "name": "comment.block.shenzhen-io",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.shenzhen-io",
+          "match": "\\b(const|alias|include)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.control.directive.shenzhen-io"
+            }
+          }
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "entity.name.function.label.shenzhen-io",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*:",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.label.shenzhen-io"
+            }
+          }
+        }
+      ]
+    },
+    "conditional-prefix": {
+      "patterns": [
+        {
+          "name": "keyword.control.conditional.shenzhen-io",
+          "match": "^[\\s]*([+-])\\s+",
+          "captures": {
+            "1": {
+              "name": "keyword.control.conditional.shenzhen-io"
+            }
+          }
+        }
+      ]
+    },
+    "instructions": {
+      "patterns": [
+        {
+          "name": "keyword.control.instruction.shenzhen-io",
+          "match": "\\b(nop|mov|add|sub|mul|not|dgt|dst|jmp|slp|slx|teq|tgt|tlt|tcp)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.control.instruction.shenzhen-io"
+            }
+          }
+        }
+      ]
+    },
+    "registers": {
+      "patterns": [
+        {
+          "name": "variable.other.register.shenzhen-io",
+          "match": "\\b(acc|dat|null)\\b"
+        }
+      ]
+    },
+    "ports": {
+      "patterns": [
+        {
+          "name": "variable.other.port.shenzhen-io",
+          "match": "\\b([px][0-9])\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.integer.shenzhen-io",
+          "match": "\\b(-?[0-9]+)\\b"
+        }
+      ]
+    }
+  }
+}
+
