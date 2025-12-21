@@ -4,6 +4,9 @@
 /third_party/solutions-stinkingbanana/
 /.tmp/
 
+# Personal solutions (extracted from save files)
+/examples/my-solutions/
+
 # macOS / editor
 .DS_Store
 .idea/

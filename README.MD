@@ -51,6 +51,23 @@ Or use the wrapper script in the project root:
 - `docs/` — instruction set, timing model, and usage notes
 - `specs/` — feature specifications and design docs
 
+## Documentation
+
+### Getting Started
+- **[COMPILE.md](COMPILE.md)** — Build instructions for all platforms
+- **[USAGE.md](USAGE.md)** — CLI commands and examples
+- **[docs/extracting-your-solutions.md](docs/extracting-your-solutions.md)** — Extract your save files (macOS/Linux/Windows)
+
+### Testing & Validation
+- **[TESTING.md](TESTING.md)** — Testing guide (unit tests and examples)
+- **[docs/validation-results.md](docs/validation-results.md)** — Real-world compatibility (483 solutions, 100%)
+
+### Technical Details
+- **[docs/instruction-set.md](docs/instruction-set.md)** — Complete instruction reference
+- **[docs/timing-model.md](docs/timing-model.md)** — Cycle-accurate timing
+- **[docs/undocumented-instructions.md](docs/undocumented-instructions.md)** — `gen` and `@` instructions
+- **[docs/MC4000-vs-MC6000.md](docs/MC4000-vs-MC6000.md)** — Microcontroller differences
+
 ## Editor Support
 
 ### VS Code Syntax Highlighting
