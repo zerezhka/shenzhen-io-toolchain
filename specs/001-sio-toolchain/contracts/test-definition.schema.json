@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/sio/test-definition.schema.json",
+  "title": "Shenzhen I/O Toolchain Test Definition",
+  "type": "object",
+  "required": ["formatVersion", "cases"],
+  "properties": {
+    "formatVersion": {
+      "type": "string",
+      "description": "Schema version for forward/backward compatibility."
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/testCase" }
+    }
+  },
+  "$defs": {
+    "testCase": {
+      "type": "object",
+      "required": ["name", "program", "cycleLimit", "ports", "inputs", "expectedOutputs"],
+      "properties": {
+        "name": { "type": "string" },
+        "program": {
+          "type": "object",
+          "required": ["path"],
+          "properties": {
+            "path": { "type": "string", "description": "Path to assembled program text (vanilla assembly)." }
+          },
+          "additionalProperties": false
+        },
+        "cycleLimit": { "type": "integer", "minimum": 1 },
+        "ports": {
+          "type": "object",
+          "required": ["count"],
+          "properties": {
+            "count": { "type": "integer", "minimum": 1, "description": "Number of ports exposed as p0..pN." }
+          },
+          "additionalProperties": false
+        },
+        "portMappings": {
+          "type": "object",
+          "description": "Maps port IDs (e.g., p0) to stream IDs for inputs/outputs.",
+          "additionalProperties": { "type": "string" }
+        },
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/signalStream" }
+        },
+        "expectedOutputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/expectedOutput" }
+        },
+        "metadataRefs": {
+          "type": "object",
+          "description": "Optional references to local-only plain text assets (not embedded in repo).",
+          "properties": {
+            "description": { "type": "string" },
+            "messages": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "signalStream": {
+      "type": "object",
+      "required": ["id", "samples"],
+      "properties": {
+        "id": { "type": "string" },
+        "rate": { "type": "integer", "minimum": 1, "description": "Optional rate metadata from dumps." },
+        "samples": {
+          "type": "array",
+          "items": { "type": "integer" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "expectedOutput": {
+      "type": "object",
+      "required": ["streamId", "mode"],
+      "properties": {
+        "streamId": { "type": "string" },
+        "mode": { "type": "string", "enum": ["cycle-exact", "order-only"] },
+        "events": {
+          "type": "array",
+          "description": "Cycle-exact expectations: list of {cycle,value}.",
+          "items": {
+            "type": "object",
+            "required": ["cycle", "value"],
+            "properties": {
+              "cycle": { "type": "integer", "minimum": 0 },
+              "value": { "type": "integer" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "values": {
+          "type": "array",
+          "description": "Order-only expectations: list of values in expected order.",
+          "items": { "type": "integer" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "cycle-exact" } } },
+          "then": { "required": ["events"] }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "order-only" } } },
+          "then": { "required": ["values"] }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+
+

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>sio</AssemblyName>
+    <RootNamespace>Sio.Cli</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sio.Assembler\Sio.Assembler.csproj" />
+    <ProjectReference Include="..\Sio.Simulator\Sio.Simulator.csproj" />
+    <ProjectReference Include="..\Sio.TestRunner\Sio.TestRunner.csproj" />
+  </ItemGroup>
+</Project>
+
+

@@ -1,50 +1,74 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# shenzhen-simulator-io Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. CLI-First, Headless Toolchain
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+- The primary interface MUST be a **CLI**.
+- All core features MUST be usable without any GUI.
+- CLI behavior MUST be scriptable: stable exit codes, stdout for results, stderr for errors.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Determinism & Reproducibility
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+- For the same inputs, the assembler, simulator, and test runner MUST produce identical outputs across repeated runs.
+- Any non-deterministic behavior MUST be treated as a defect unless explicitly documented and gated behind an opt-in flag.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Compatibility & Portability (Cross-Platform)
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+- The project MUST run on Windows, macOS, and Linux.
+- The runtime target MUST remain compatible with **Mono** (avoid modern-only runtime features and dependencies).
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Asset Safety (No Copyrighted Game Content)
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- The repository MUST NOT embed or redistribute original Shenzhen I/O game assets.
+- Local-only assets (e.g., extracted `messages.*`, `descriptions.*`, signal dumps) MAY be supported as inputs, but MUST be excluded from version control by default.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Licensing & Attribution (Non-Negotiable)
+
+- Original code in this repository MUST be licensed under **MIT**.
+- If third-party code is included, it MUST retain its original license and required attribution/NOTICE materials.
+- The project MUST NOT relicense third-party code under MIT unless the upstream license explicitly permits and the required notices are preserved.
+
+### VI. Specification-Driven Development
+
+- `specs/<feature>/spec.md` is the source of truth for user-facing behavior and acceptance criteria.
+- `specs/<feature>/plan.md` and `tasks.md` MUST remain consistent with the spec.
+- When a conflict exists, the team MUST either:
+  - update plan/tasks to match the spec, or
+  - explicitly revise the spec (with rationale).
+
+### VII. Quality Gates (Tests & Validation)
+
+- Any change that affects parsing, simulation semantics, or test evaluation MUST add or update automated tests.
+- The test runner MUST support deterministic pass/fail and non-zero exit on failures.
+- Contract/schema changes MUST be accompanied by updated examples and schema validation.
+
+## Additional Constraints
+
+### Scope Discipline
+
+- MVP scope MUST follow the current spec’s clarifications (e.g., single-MCU simulation in MVP unless the spec changes).
+- “Full instruction coverage” MUST be backed by an explicit, versioned instruction list in docs (so it is testable).
+
+### Dependency Discipline
+
+- Avoid unnecessary dependencies; prefer small, well-audited libraries compatible with Mono.
+- Dependencies requiring Unity or the game runtime are prohibited.
+
+## Development Workflow & Review
+
+- Every PR MUST check:
+  - no copyrighted assets added
+  - licensing/attribution compliance for any included third-party code
+  - deterministic behavior (where applicable)
+  - cross-platform build/run feasibility (at least via CI or documented local verification)
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes other workflow conventions and templates in the repo.
+- Amendments MUST include:
+  - a short rationale
+  - the affected gates/principles
+  - any migration notes for existing specs/plans/tasks
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-12-21 | **Last Amended**: 2025-12-21

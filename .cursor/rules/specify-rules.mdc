@@ -1,0 +1,29 @@
+# shenzhen-simulator-io Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2025-12-21
+
+## Active Technologies
+
+- C# (Mono-compatible; target .NET Framework 4.x profile supported by Mono) + Minimal CLI args parsing; JSON + YAML parsing libraries as needed (compatible with Mono) (001-sio-toolchain)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+# Add commands for C# (Mono-compatible; target .NET Framework 4.x profile supported by Mono)
+
+## Code Style
+
+C# (Mono-compatible; target .NET Framework 4.x profile supported by Mono): Follow standard conventions
+
+## Recent Changes
+
+- 001-sio-toolchain: Added C# (Mono-compatible; target .NET Framework 4.x profile supported by Mono) + Minimal CLI args parsing; JSON + YAML parsing libraries as needed (compatible with Mono)
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

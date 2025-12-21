@@ -1,1 +1,15 @@
 /originalgamefilessteam/
+/.tmp/
+
+# macOS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# .NET / C# build artifacts
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
