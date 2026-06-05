@@ -1,14 +1,19 @@
 {
   "name": "shenzhen-io",
   "displayName": "Shenzhen I/O Assembly",
-  "description": "Syntax highlighting for Shenzhen I/O assembly language",
-  "version": "0.1.0",
+  "description": "Language support for Shenzhen I/O assembly: syntax highlighting, diagnostics, hover, completion, and assemble/simulate/test commands.",
+  "version": "0.2.0",
   "publisher": "shenzhen-simulator-io",
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.75.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Linters"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:shenzhen-io"
   ],
   "contributes": {
     "languages": [
@@ -31,7 +36,78 @@
         "scopeName": "source.shenzhen-io",
         "path": "./syntaxes/shenzhen-io.tmLanguage.json"
       }
-    ]
+    ],
+    "commands": [
+      {
+        "command": "shenzhenIo.assemble",
+        "title": "Shenzhen I/O: Assemble Current File"
+      },
+      {
+        "command": "shenzhenIo.simulate",
+        "title": "Shenzhen I/O: Simulate Current File"
+      },
+      {
+        "command": "shenzhenIo.test",
+        "title": "Shenzhen I/O: Run Tests (Current File)"
+      },
+      {
+        "command": "shenzhenIo.restartServer",
+        "title": "Shenzhen I/O: Restart Language Server"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == shenzhen-io",
+          "command": "shenzhenIo.assemble",
+          "group": "shenzhenIo@1"
+        },
+        {
+          "when": "resourceLangId == shenzhen-io",
+          "command": "shenzhenIo.simulate",
+          "group": "shenzhenIo@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Shenzhen I/O",
+      "properties": {
+        "shenzhenIo.languageServer.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to sio-langserver.exe. If empty, the relative build under src/Sio.EditorSupport is used."
+        },
+        "shenzhenIo.mono.path": {
+          "type": "string",
+          "default": "mono",
+          "description": "Path to the mono runtime used to run the .NET language server on Linux/macOS. Ignored on Windows."
+        },
+        "shenzhenIo.cli.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the sio CLI wrapper or sio.exe used by the assemble/simulate/test commands. If empty, the repo's ./sio wrapper is used."
+        },
+        "shenzhenIo.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace the communication between VS Code and the language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.4.0"
   },
   "repository": {
     "type": "git",
@@ -39,4 +115,3 @@
   },
   "license": "MIT"
 }
-

@@ -12,6 +12,10 @@
 .idea/
 .vscode/
 
+# Node / VS Code extension build artifacts
+**/node_modules/
+editor/vscode-shenzhen-io/out/
+
 # .NET / C# build artifacts
 **/bin/
 **/obj/

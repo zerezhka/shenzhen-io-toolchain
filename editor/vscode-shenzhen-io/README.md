@@ -1,48 +1,57 @@
-# Shenzhen I/O Assembly Syntax Highlighting
+# Shenzhen I/O Assembly for VS Code
 
-VS Code extension providing syntax highlighting for Shenzhen I/O assembly language.
+VS Code language support for Shenzhen I/O assembly: syntax highlighting plus a
+language server (diagnostics, hover, completion, go-to-definition) and commands
+that drive the `sio` CLI.
 
 ## Features
 
-- Syntax highlighting for all Shenzhen I/O instructions
-- Support for labels, registers, ports, and numbers
-- Extended syntax support: `const`, `alias`, `include` directives
-- Block comment support (`/* */`)
-- Line comment support (`#`)
+- **Syntax highlighting** for all instructions, labels, registers, ports, numbers
+- **Diagnostics** — unknown instructions, undefined `jmp` labels, parser errors
+- **Hover** — instruction signatures/descriptions and register docs
+- **Completion** — instructions and registers
+- **Go-to-definition** for labels
+- **Commands** — assemble / simulate / test the current file via the `sio` CLI
+- Extended syntax: `const`, `alias`, `include`; `#` and `/* */` comments
 
-## Installation
+## Requirements
 
-### From Source
+The language server is a .NET (`net472`) executable. Build it once:
 
-1. Copy this directory to your VS Code extensions folder:
-   ```bash
-   cp -r editor/vscode-shenzhen-io ~/.vscode/extensions/shenzhen-io-0.1.0
-   ```
+```bash
+dotnet build src/Sio.EditorSupport
+```
 
-2. Reload VS Code
+On Linux/macOS it runs under **mono** (configurable via `shenzhenIo.mono.path`).
 
-### Manual Installation
+## Installation (from source)
 
-1. Open VS Code
-2. Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
-3. Type "Extensions: Install from VSIX..." (if you have a packaged version)
-4. Or copy the extension folder to your extensions directory
+```bash
+cd editor/vscode-shenzhen-io
+npm install && npm run compile
+cp -r . ~/.vscode/extensions/shenzhen-io-0.2.0
+```
 
-## Usage
+Reload VS Code. Opening any `.asm` file activates the extension.
 
-Files with `.asm` extension will automatically use Shenzhen I/O syntax highlighting.
+## Settings
 
-## Supported Syntax
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `shenzhenIo.languageServer.path` | _(auto)_ | Path to `sio-langserver.exe`. Auto-resolved from the workspace build if empty. |
+| `shenzhenIo.mono.path` | `mono` | Mono runtime used to run the server on Linux/macOS. |
+| `shenzhenIo.cli.path` | _(auto)_ | Path to the `sio` CLI. Falls back to the repo's `./sio` wrapper. |
+| `shenzhenIo.trace.server` | `off` | LSP trace verbosity. |
 
-- **Instructions**: `mov`, `add`, `sub`, `mul`, `not`, `dgt`, `dst`, `jmp`, `slp`, `slx`, `teq`, `tgt`, `tlt`, `tcp`, `nop`
-- **Registers**: `acc`, `dat`, `null`
-- **Ports**: `p0`-`p9`, `x0`-`x9`
-- **Labels**: `label:`
-- **Comments**: `# line comment` and `/* block comment */`
-- **Extended directives**: `const`, `alias`, `include`
-- **Conditional execution**: `+` and `-` prefixes
+## Commands
+
+Available from the Command Palette and the editor context menu:
+
+- **Shenzhen I/O: Assemble Current File** — writes `<file>.out.txt`
+- **Shenzhen I/O: Simulate Current File** — runs with `--trace`
+- **Shenzhen I/O: Run Tests (Current File)**
+- **Shenzhen I/O: Restart Language Server**
 
 ## License
 
 MIT
-
