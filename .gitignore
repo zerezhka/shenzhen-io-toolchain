@@ -16,6 +16,12 @@
 **/node_modules/
 editor/vscode-shenzhen-io/out/
 
+# Gradle / IntelliJ plugin build artifacts
+editor/intellij-shenzhen-io/.gradle/
+editor/intellij-shenzhen-io/build/
+editor/intellij-shenzhen-io/.intellijPlatform/
+editor/intellij-shenzhen-io/.kotlin/
+
 # .NET / C# build artifacts
 **/bin/
 **/obj/

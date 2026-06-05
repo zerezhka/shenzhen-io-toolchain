@@ -1,0 +1,51 @@
+<idea-plugin>
+    <id>io.shenzhen.sio</id>
+    <name>Shenzhen I/O Assembly</name>
+    <vendor>shenzhen-simulator-io</vendor>
+
+    <description><![CDATA[
+        Language support for Shenzhen I/O assembly: file type recognition, plus
+        diagnostics, hover, completion, and go-to-definition via the bundled
+        <code>sio-langserver</code> language server (powered by LSP4IJ), and
+        assemble/simulate/test actions that drive the <code>sio</code> CLI.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.redhat.devtools.lsp4ij</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType
+            name="Shenzhen I/O"
+            implementationClass="io.shenzhen.sio.ShenzhenIoFileType"
+            fieldName="INSTANCE"
+            language="ShenzhenIO"
+            extensions="asm"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server
+            id="shenzhenIoLanguageServer"
+            name="Shenzhen I/O Language Server"
+            factoryClass="io.shenzhen.sio.lsp.ShenzhenIoLspServerFactory">
+            <description>Language server for Shenzhen I/O assembly.</description>
+        </server>
+        <languageMapping
+            language="ShenzhenIO"
+            serverId="shenzhenIoLanguageServer"/>
+    </extensions>
+
+    <actions>
+        <group id="io.shenzhen.sio.ActionGroup" text="Shenzhen I/O" popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <action id="io.shenzhen.sio.Assemble"
+                    class="io.shenzhen.sio.actions.SioAssembleAction"
+                    text="Assemble Current File"/>
+            <action id="io.shenzhen.sio.Simulate"
+                    class="io.shenzhen.sio.actions.SioSimulateAction"
+                    text="Simulate Current File"/>
+            <action id="io.shenzhen.sio.Test"
+                    class="io.shenzhen.sio.actions.SioTestAction"
+                    text="Run Tests (Current File)"/>
+        </group>
+    </actions>
+</idea-plugin>
