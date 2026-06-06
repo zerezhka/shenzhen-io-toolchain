@@ -23,6 +23,9 @@
         <lang.parserDefinition
             language="ShenzhenIO"
             implementationClass="io.shenzhen.sio.lang.ShenzhenIoParserDefinition"/>
+        <lang.syntaxHighlighterFactory
+            language="ShenzhenIO"
+            implementationClass="io.shenzhen.sio.lang.ShenzhenIoSyntaxHighlighterFactory"/>
         <configurationType
             implementation="io.shenzhen.sio.run.SioConfigurationType"/>
         <runConfigurationProducer

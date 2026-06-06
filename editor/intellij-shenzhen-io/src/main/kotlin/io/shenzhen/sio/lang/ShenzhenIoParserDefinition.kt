@@ -29,7 +29,9 @@ class ShenzhenIoParserDefinition : ParserDefinition {
 
     override fun getFileNodeType(): IFileElementType = ShenzhenIoTokenTypes.FILE
 
-    override fun getCommentTokens(): TokenSet = TokenSet.EMPTY
+    // Tell the platform which tokens are comments (enables comment/uncomment,
+    // and keeps the spellchecker from treating comment text as code).
+    override fun getCommentTokens(): TokenSet = TokenSet.create(ShenzhenIoTokenTypes.COMMENT)
 
     override fun getStringLiteralElements(): TokenSet = TokenSet.EMPTY
 
