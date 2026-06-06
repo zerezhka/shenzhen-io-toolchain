@@ -19,6 +19,11 @@ Build, test, and validate Shenzhen I/O assembly **outside the game** with a **CL
 
 Early stage (spec-first). See the current feature spec at `specs/001-sio-toolchain/spec.md`.
 
+> **Direction:** the C# (`net472` + Mono) toolchain is being rewritten in **Zig**
+> to ship a single native binary with no runtime. The C# implementation stays as
+> the validated reference during the transition. See
+> [docs/zig-rewrite.md](docs/zig-rewrite.md).
+
 ## CLI
 
 The CLI is located at `src/Sio.Cli/bin/Debug/net472/sio.exe`. On macOS/Linux with Mono, run it with:
