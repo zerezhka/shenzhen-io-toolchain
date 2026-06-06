@@ -29,6 +29,10 @@ namespace Sio.Cli.Commands
                 return ExitCodes.Usage;
             }
 
+            // Default cap so programs with infinite loops (e.g. `jmp loop`) still
+            // terminate and produce output when no explicit limit is given.
+            const long DefaultCycleLimit = 1000;
+
             var programFile = args[0];
             long? cycleLimit = null;
             bool traceEnabled = false;
@@ -66,7 +70,8 @@ namespace Sio.Cli.Commands
                 // Create simulation components
                 var cpu = new CpuState(hasDatRegister: true); // Default to MC6000
                 var ports = new PortBus(6); // Default to 6 ports (MC6000)
-                var cycles = new CycleController(cycleLimit);
+                var effectiveLimit = cycleLimit ?? DefaultCycleLimit;
+                var cycles = new CycleController(effectiveLimit);
                 var tracer = traceEnabled ? new Tracer(enabled: true) : new Tracer(enabled: false);
                 var engine = new StepEngine(cpu, ports, cycles, tracer, program);
 
@@ -104,8 +109,15 @@ namespace Sio.Cli.Commands
 
                 if (cycles.IsLimitReached)
                 {
-                    _writer.WriteErrorLine($"Cycle limit ({cycleLimit}) reached");
-                    return ExitCodes.Error;
+                    if (cycleLimit.HasValue)
+                    {
+                        _writer.WriteErrorLine($"Cycle limit ({cycleLimit}) reached");
+                        return ExitCodes.Error;
+                    }
+
+                    // Hit the implicit default limit: inform the user, not an error.
+                    _writer.WriteInfoLine(
+                        $"Stopped at default cycle limit ({DefaultCycleLimit}). Use --cycles <N> to run longer.");
                 }
 
                 return ExitCodes.Ok;

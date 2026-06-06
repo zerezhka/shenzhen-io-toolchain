@@ -63,7 +63,9 @@ namespace Sio.EditorSupport.Analysis
         public static DocumentAnalysis Analyze(string text)
         {
             var result = new DocumentAnalysis();
-            text = text ?? string.Empty;
+            // Blank out comments first (preserving offsets) so comment words are
+            // not mistaken for instructions, mirroring the assembler preprocessor.
+            text = MaskComments(text ?? string.Empty);
 
             var tokenizer = new Tokenizer();
             var tokens = tokenizer.Tokenize(text);
@@ -102,6 +104,59 @@ namespace Sio.EditorSupport.Analysis
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Replaces comment characters with spaces, keeping all other characters
+        /// (including newlines) so token line/column positions stay accurate.
+        /// Matches the assembler's comment rules: # and ; line comments, /* */ blocks.
+        /// </summary>
+        private static string MaskComments(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            var chars = input.ToCharArray();
+            var inBlock = false;
+            var i = 0;
+            while (i < chars.Length)
+            {
+                var c = chars[i];
+                if (inBlock)
+                {
+                    if (c == '*' && i + 1 < chars.Length && chars[i + 1] == '/')
+                    {
+                        chars[i] = ' ';
+                        chars[i + 1] = ' ';
+                        i += 2;
+                        inBlock = false;
+                        continue;
+                    }
+                    if (c != '\n' && c != '\r')
+                        chars[i] = ' ';
+                    i++;
+                }
+                else if (c == '/' && i + 1 < chars.Length && chars[i + 1] == '*')
+                {
+                    chars[i] = ' ';
+                    chars[i + 1] = ' ';
+                    i += 2;
+                    inBlock = true;
+                }
+                else if (c == '#' || c == ';')
+                {
+                    while (i < chars.Length && chars[i] != '\n' && chars[i] != '\r')
+                    {
+                        chars[i] = ' ';
+                        i++;
+                    }
+                }
+                else
+                {
+                    i++;
+                }
+            }
+            return new string(chars);
         }
 
         private static void AnalyzeLines(IList<Token> tokens, DocumentAnalysis result)
