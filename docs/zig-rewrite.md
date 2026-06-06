@@ -2,6 +2,9 @@
 
 **Status:** planned · **Started:** 2026-06-06
 
+> Beginner-friendly, step-by-step companion (на русском, с объяснением понятий и
+> ссылками): [zig-plan.md](zig-plan.md).
+
 ## Why
 
 The current toolchain is C# targeting **.NET Framework 4.7.2 (`net472`)**. On
