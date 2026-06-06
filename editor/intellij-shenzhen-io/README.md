@@ -9,6 +9,10 @@ in one place.
 
 - `.asm` file type recognition
 - **Diagnostics, hover, completion, go-to-definition** through `sio-langserver`
+- **Run configurations** — the ▶ toolbar button runs the current `.asm` file; a
+  single "Shenzhen I/O" config type lets you pick the command
+  (assemble/simulate/test) and extra arguments. Opening an `.asm` file
+  auto-creates a runnable config.
 - Editor context-menu actions: **Assemble / Simulate / Run Tests** (via the `sio` CLI)
 
 ## Requirements

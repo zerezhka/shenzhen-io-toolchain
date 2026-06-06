@@ -20,6 +20,13 @@
             fieldName="INSTANCE"
             language="ShenzhenIO"
             extensions="asm"/>
+        <lang.parserDefinition
+            language="ShenzhenIO"
+            implementationClass="io.shenzhen.sio.lang.ShenzhenIoParserDefinition"/>
+        <configurationType
+            implementation="io.shenzhen.sio.run.SioConfigurationType"/>
+        <runConfigurationProducer
+            implementation="io.shenzhen.sio.run.SioRunConfigurationProducer"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">

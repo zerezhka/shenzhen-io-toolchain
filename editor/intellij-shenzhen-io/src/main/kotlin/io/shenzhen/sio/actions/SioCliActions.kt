@@ -1,18 +1,15 @@
 package io.shenzhen.sio.actions
 
 import com.intellij.execution.RunContentExecutor
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.OSProcessHandler
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.vfs.VirtualFile
 import io.shenzhen.sio.ShenzhenIoFileType
-import io.shenzhen.sio.SioPaths
+import io.shenzhen.sio.SioCommand
 
 /** Base for actions that run the `sio` CLI on the active .asm file. */
 abstract class SioCliAction(private val title: String) : AnAction() {
@@ -37,7 +34,7 @@ abstract class SioCliAction(private val title: String) : AnAction() {
         // Persist edits so the CLI sees current content.
         FileDocumentManager.getInstance().saveAllDocuments()
 
-        val cli = SioPaths.cli(project) ?: run {
+        val commandLine = SioCommand.build(project, subcommand, file.path, extraArgs(file.path)) ?: run {
             Messages.showErrorDialog(
                 project,
                 "sio CLI not found. Build it or set the SIO_CLI environment variable.",
@@ -46,29 +43,11 @@ abstract class SioCliAction(private val title: String) : AnAction() {
             return
         }
 
-        val commandLine = buildCommandLine(project, cli, file)
         val handler = OSProcessHandler(commandLine)
         RunContentExecutor(project, handler)
             .withTitle(title)
             .withActivateToolWindow(true)
             .run()
-    }
-
-    private fun buildCommandLine(project: Project, cli: String, file: VirtualFile): GeneralCommandLine {
-        val inputPath = file.path
-        val cmd = GeneralCommandLine()
-        // The repo wrapper is a shell script on *nix; an .exe needs mono.
-        if (!SioPaths.isWindows() && cli.endsWith(".exe")) {
-            cmd.exePath = SioPaths.mono()
-            cmd.addParameter(cli)
-        } else {
-            cmd.exePath = cli
-        }
-        cmd.addParameter(subcommand)
-        cmd.addParameter(inputPath)
-        cmd.addParameters(extraArgs(inputPath))
-        project.basePath?.let { cmd.setWorkDirectory(it) }
-        return cmd
     }
 }
 
