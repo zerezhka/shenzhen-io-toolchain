@@ -1,6 +1,6 @@
 .{
     .name = .sio,
-    .version = "0.0.0",
+    .version = "0.0.1",
     .fingerprint = 0xc0c4a33c4e67548b,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{},
