@@ -22,10 +22,10 @@ object ShenzhenIoTokenTypes {
     @JvmField val LABEL = IElementType("SIO_LABEL", ShenzhenIoLanguage)
     @JvmField val NUMBER = IElementType("SIO_NUMBER", ShenzhenIoLanguage)
     @JvmField val IDENTIFIER = IElementType("SIO_IDENTIFIER", ShenzhenIoLanguage)
+    @JvmField val CONDITIONAL = IElementType("SIO_CONDITIONAL", ShenzhenIoLanguage)
 
     // TODO: consider adding types as you go, e.g.:
-    //   COLON (the ':' after a label), DIRECTIVE (const/alias/include),
-    //   CONDITIONAL (the +/- prefix), STRING, etc.
+    //   COLON (the ':' after a label), STRING, etc.
 
     /** The root node type for a whole .asm file. You won't usually touch this. */
     @JvmField val FILE = IFileElementType(ShenzhenIoLanguage)

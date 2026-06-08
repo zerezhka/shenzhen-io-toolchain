@@ -32,6 +32,7 @@ class ShenzhenIoSyntaxHighlighter : SyntaxHighlighterBase() {
             ShenzhenIoTokenTypes.LABEL -> LABEL_KEYS
             ShenzhenIoTokenTypes.NUMBER -> NUMBER_KEYS
             ShenzhenIoTokenTypes.IDENTIFIER -> EMPTY_KEYS // leave identifiers default
+            ShenzhenIoTokenTypes.CONDITIONAL -> CONDITIONAL_KEYS
             TokenType.BAD_CHARACTER -> BAD_CHAR_KEYS
             else -> EMPTY_KEYS
         }
@@ -45,6 +46,7 @@ class ShenzhenIoSyntaxHighlighter : SyntaxHighlighterBase() {
         val REGISTER = key("REGISTER", DefaultLanguageHighlighterColors.INSTANCE_FIELD)
         val LABEL = key("LABEL", DefaultLanguageHighlighterColors.FUNCTION_DECLARATION)
         val NUMBER = key("NUMBER", DefaultLanguageHighlighterColors.NUMBER)
+        val CONDITIONAL = key("CONDITIONAL", DefaultLanguageHighlighterColors.NUMBER)
         val BAD_CHAR = key("BAD_CHARACTER", HighlighterColors.BAD_CHARACTER)
 
         private val COMMENT_KEYS = arrayOf(COMMENT)
@@ -53,6 +55,7 @@ class ShenzhenIoSyntaxHighlighter : SyntaxHighlighterBase() {
         private val LABEL_KEYS = arrayOf(LABEL)
         private val NUMBER_KEYS = arrayOf(NUMBER)
         private val BAD_CHAR_KEYS = arrayOf(BAD_CHAR)
+        private val CONDITIONAL_KEYS = arrayOf(CONDITIONAL)
         private val EMPTY_KEYS = emptyArray<TextAttributesKey>()
     }
 }

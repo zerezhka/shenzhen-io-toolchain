@@ -75,19 +75,53 @@ class ShenzhenIoLexer : LexerBase() {
                 tokenType = ShenzhenIoTokenTypes.COMMENT
             }
 
-            // TODO: block comments  /* ... */   -> ShenzhenIoTokenTypes.COMMENT
-            //   Hint: once you see "/*", keep consuming until you find "*/".
+            // --- block comments  /* ... */ ---
+            c == '/' && tokenStart + 1 < endOffset && text[tokenStart + 1] == '*' -> {
+                // Scan from just past "/*" until we see "*/" (or hit the end).
+                var i = tokenStart + 2
+                while (i < endOffset && !(text[i - 1] == '*' && text[i] == '/')) i++
+                // i now points at the '/' of "*/" (or == endOffset if unterminated).
+                tokenEnd = if (i < endOffset) i + 1 else endOffset
+                tokenType = ShenzhenIoTokenTypes.COMMENT
+            }
+            // numbers (e.g. 100, -5)       -> ShenzhenIoTokenTypes.NUMBER
+            (c == '-' && tokenStart + 1 < endOffset && text[tokenStart + 1].isDigit()) || c.isDigit() -> {
+                var i = tokenStart
+                if (text[i] == '-') i++
+                while (i < endOffset && text[i].isDigit()) i++
+                tokenEnd = i
+                tokenType = ShenzhenIoTokenTypes.NUMBER
+            }
+            // --- conditional execution prefix: + or - before an instruction ---
+            c == '+' || c == '-' -> {
+                tokenEnd = tokenStart + 1
+                tokenType = ShenzhenIoTokenTypes.CONDITIONAL
+            }
+            // --- words (letters/underscores) ---
+            c.isLetter() || c == '_' -> {
+                var i = tokenStart
+                while (i < endOffset && (text[i].isLetterOrDigit() || text[i] == '_')) i++
+                val word = text.subSequence(tokenStart, i).toString()
 
-            // TODO: numbers (e.g. 100, -5)       -> ShenzhenIoTokenTypes.NUMBER
-            //   Hint: an optional '-' followed by one or more digits.
-
-            // TODO: words (letters/underscores) -> classify them:
-            //   - if followed by ':'            -> ShenzhenIoTokenTypes.LABEL
-            //   - if it's an instruction        -> ShenzhenIoTokenTypes.INSTRUCTION
-            //     (see Mnemonics below)
-            //   - if it looks like a register   -> ShenzhenIoTokenTypes.REGISTER
-            //     (acc, dat, null, p0..p9, x0..x9)
-            //   - otherwise                     -> ShenzhenIoTokenTypes.IDENTIFIER
+                when {
+                    i < endOffset && text[i] == ':' -> {
+                        tokenEnd = i + 1
+                        tokenType = ShenzhenIoTokenTypes.LABEL
+                    }
+                    word in Mnemonics -> {
+                        tokenEnd = i
+                        tokenType = ShenzhenIoTokenTypes.INSTRUCTION
+                    }
+                    isRegister(word) -> {
+                        tokenEnd = i
+                        tokenType = ShenzhenIoTokenTypes.REGISTER
+                    }
+                    else -> {
+                        tokenEnd = i
+                        tokenType = ShenzhenIoTokenTypes.IDENTIFIER
+                    }
+                }
+            }
 
             // --- fallback: consume a single unknown character so we never get stuck ---
             else -> {
@@ -105,6 +139,11 @@ class ShenzhenIoLexer : LexerBase() {
         var i = tokenStart
         while (i < endOffset && predicate(text[i])) i++
         return if (i == tokenStart) tokenStart + 1 else i
+    }
+
+    private fun isRegister(word: String): Boolean {
+        return word in setOf("acc", "dat", "null") ||
+               (word.length == 2 && word[0] in "px" && word[1].isDigit())
     }
 
     companion object {
