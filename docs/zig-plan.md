@@ -93,6 +93,39 @@
 У нас структура почти плоская (список инструкций), так что «дерево» будет совсем
 маленьким — это нормально.
 
+#### Как выглядит наш AST
+
+Файл — это просто список строк, каждая строка — одна из пяти форм:
+
+```
+Program
+  └── Statement[]  (одна на строку)
+        ├── LabelDef    { name: []const u8 }
+        ├── Instruction { cond: Cond, mnemonic: []const u8, operands: []Operand }
+        ├── Const       { name: []const u8, value: i32 }
+        ├── Alias       { name: []const u8, target: []const u8 }
+        └── Include     { path: []const u8 }
+
+Cond    = none | true_branch (+) | false_branch (-)
+Operand = Register([]const u8) | Immediate(i32) | Label([]const u8)
+```
+
+Никакой вложенности, никакой рекурсии — парсер читает строку за строкой и
+раскладывает токены в одну из этих структур. В Zig это будет `union(enum)`:
+
+```zig
+const Statement = union(enum) {
+    label_def:   struct { name: []const u8 },
+    instruction: struct { cond: Cond, mnemonic: []const u8, operands: []Operand },
+    const_def:   struct { name: []const u8, value: i32 },
+    alias_def:   struct { name: []const u8, target: []const u8 },
+    include:     struct { path: []const u8 },
+};
+```
+
+💡 Посмотри на `src/Sio.Assembler/Parse/Statement.cs` — там та же структура на C#,
+можно сверяться.
+
 📖 [Синтаксический анализ](https://ru.wikipedia.org/wiki/Синтаксический_анализ) ·
 [AST](https://ru.wikipedia.org/wiki/Абстрактное_синтаксическое_дерево) ·
 [Recursive descent parser](https://en.wikipedia.org/wiki/Recursive_descent_parser)
