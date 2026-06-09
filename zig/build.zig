@@ -34,4 +34,15 @@ pub fn build(b: *std.Build) void {
         }),
     });
     b.step("test", "Run tests").dependOn(&b.addRunArtifact(tests).step);
+
+    const bench = b.addExecutable(.{
+        .name = "bench",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/bench.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    const run_bench = b.addRunArtifact(bench);
+    b.step("bench", "Run benchmark").dependOn(&run_bench.step);
 }

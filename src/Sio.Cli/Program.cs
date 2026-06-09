@@ -31,6 +31,8 @@ namespace Sio.Cli
                 case "test":
                     var testCmd = new TestCommand(writer);
                     return testCmd.Execute(commandArgs);
+                case "bench":
+                    return new BenchCommand().Execute();
                 default:
                     Console.Error.WriteLine($"sio: unknown command: {command}");
                     Console.Error.WriteLine("Usage: sio <assemble|simulate|test> [args]");
