@@ -29,8 +29,8 @@ const Tokenizer = struct {
                 if (isWhitespace(c)) _ = self.advance() else break;
             }
 
-            const c = self.peek() orelse return .{
-                .type = .end_of_file,
+            const c = self.peek() orelse return Token{
+                .type = TokenType.end_of_file,
                 .value = "",
                 .line = self.line,
                 .column = self.column,
@@ -41,15 +41,20 @@ const Tokenizer = struct {
             switch (c) {
                 ':' => {
                     _ = self.advance();
-                    return .{ .type = .colon, .value = ":", .line = self.line, .column = col };
+                    return Token{
+                        .type = TokenType.colon,
+                        .value = ":",
+                        .line = self.line,
+                        .column = col
+                    };
                 },
                 'a'...'z', 'A'...'Z', '_' => {
                     const start = self.pos;
                     while (self.peek()) |nc| {
                         if (std.ascii.isAlphanumeric(nc) or nc == '_') _ = self.advance() else break;
                     }
-                    return .{
-                        .type = .identifier,
+                    return Token{
+                        .type = TokenType.identifier,
                         .value = self.source[start..self.pos],
                         .line = self.line,
                         .column = col,
@@ -59,8 +64,8 @@ const Tokenizer = struct {
                     _ = self.advance();
                     self.line += 1;
                     self.column = 0;
-                    return .{
-                        .type = .new_line,
+                    return Token{
+                        .type = TokenType.new_line,
                         .value = "\n",
                         .line = self.line - 1,
                         .column = col,
@@ -74,8 +79,8 @@ const Tokenizer = struct {
                 },
                 '+' => {
                     _ = self.advance();
-                    return .{
-                        .type = .condition,
+                    return Token{
+                        .type = TokenType.condition,
                         .value = "+",
                         .line = self.line,
                         .column = col,
@@ -89,8 +94,8 @@ const Tokenizer = struct {
                             while (self.peek()) |nc| {
                                 if (std.ascii.isDigit(nc)) _ = self.advance() else break;
                             }
-                            return .{
-                                .type = .number,
+                            return Token{
+                                .type = TokenType.number,
                                 .value = self.source[start..self.pos],
                                 .line = self.line,
                                 .column = col,
@@ -98,8 +103,8 @@ const Tokenizer = struct {
                         }
                     }
                     _ = self.advance();
-                    return .{
-                        .type = .condition,
+                    return Token{
+                        .type = TokenType.condition,
                         .value = "-",
                         .line = self.line,
                         .column = col,
@@ -110,8 +115,8 @@ const Tokenizer = struct {
                     while (self.peek()) |nc| {
                         if (std.ascii.isDigit(nc)) _ = self.advance() else break;
                     }
-                    return .{
-                        .type = .number,
+                    return Token{
+                        .type = TokenType.number,
                         .value = self.source[start..self.pos],
                         .line = self.line,
                         .column = col,
@@ -134,7 +139,7 @@ const Tokenizer = struct {
         if (self.pos >= self.source.len) return null;
         defer {
             self.pos += 1;
-            self.column +=1;
+            self.column += 1;
         }
         return self.source[self.pos];
     }
@@ -155,7 +160,7 @@ pub fn tokenize(
     while (true) {
         const tok = t.next();
         try tokens.append(allocator, tok);
-        if (tok.type == .end_of_file) break;
+        if (tok.type == TokenType.end_of_file) break;
     }
     return tokens.toOwnedSlice(allocator);
 }

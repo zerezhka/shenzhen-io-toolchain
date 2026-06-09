@@ -74,7 +74,7 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Program {
                 const mnemonic = parseMnemonic(tokens[i].value) orelse return error.UnknownInstruction;
                 i += 1;
                 const operands = try parseOperands(allocator, tokens, &i);
-                try statements.append(allocator, .{ .instruction = .{
+                try statements.append(allocator, Statement{ .instruction = .{
                     .condition = cond,
                     .op = mnemonic,
                     .operands = operands,
@@ -82,14 +82,14 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Program {
             },
             .identifier => {
                 if (i + 1 < tokens.len and tokens[i + 1].type == .colon) {
-                    try statements.append(allocator, .{ .label = token.value });
+                    try statements.append(allocator, Statement{ .label = token.value });
                     i += 2;
                 } else {
                     const mnemonic = parseMnemonic(token.value) orelse
                         return error.UnknownInstruction;
                     i += 1;
                     const operands = try parseOperands(allocator, tokens, &i);
-                    try statements.append(allocator, .{ .instruction = .{
+                    try statements.append(allocator, Statement{ .instruction = .{
                         .condition = null,
                         .op = mnemonic,
                         .operands = operands,
@@ -103,23 +103,23 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Program {
     return Program{ .statements = try statements.toOwnedSlice(allocator) };
 }
 const mnemonic_map = std.StaticStringMap(Mnemonic).initComptime(.{
-    .{ "nop", .nop },
-    .{ "mov", .mov },
-    .{ "jmp", .jmp },
-    .{ "slp", .slp },
-    .{ "slx", .slx },
-    .{ "teq", .teq },
-    .{ "tgt", .tgt },
-    .{ "tlt", .tlt },
-    .{ "tcp", .tcp },
-    .{ "add", .add },
-    .{ "sub", .sub },
-    .{ "mul", .mul },
-    .{ "not", .not },
-    .{ "dgt", .dgt },
-    .{ "dst", .dst },
-    .{ "gen", .gen },
-    .{ "@", .@"@" },
+    .{ "nop", Mnemonic.nop },
+    .{ "mov", Mnemonic.mov },
+    .{ "jmp", Mnemonic.jmp },
+    .{ "slp", Mnemonic.slp },
+    .{ "slx", Mnemonic.slx },
+    .{ "teq", Mnemonic.teq },
+    .{ "tgt", Mnemonic.tgt },
+    .{ "tlt", Mnemonic.tlt },
+    .{ "tcp", Mnemonic.tcp },
+    .{ "add", Mnemonic.add },
+    .{ "sub", Mnemonic.sub },
+    .{ "mul", Mnemonic.mul },
+    .{ "not", Mnemonic.not },
+    .{ "dgt", Mnemonic.dgt },
+    .{ "dst", Mnemonic.dst },
+    .{ "gen", Mnemonic.gen },
+    .{ "@", Mnemonic.@"@" },
 });
 
 fn parseMnemonic(value: []const u8) ?Mnemonic {
