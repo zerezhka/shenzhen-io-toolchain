@@ -56,3 +56,8 @@ pub fn main(init: std.process.Init.Minimal) u8 {
     std.debug.print("unknown command: {s}\n\n{s}", .{ cmd, help });
     return 1;
 }
+
+test {
+    _ = @import("parse/Parser.zig");
+    _ = @import("emit/Emmiter.zig");
+}

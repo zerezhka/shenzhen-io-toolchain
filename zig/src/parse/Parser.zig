@@ -2,11 +2,11 @@ const std = @import("std");
 const Tokenizer = @import("Tokenizer.zig");
 
 const Operand = []const u8;
-const Condition = enum {
+pub const Condition = enum {
     positive,
     negative,
 };
-const Mnemonic = enum {
+pub const Mnemonic = enum {
     // basic
     nop,
     mov,
