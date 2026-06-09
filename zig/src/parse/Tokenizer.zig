@@ -78,6 +78,21 @@ const Tokenizer = struct {
                     }
                 },
                 '+' => {
+                    if (self.peekAt(1)) |nc| {
+                        if (std.ascii.isDigit(nc)) {
+                            const start = self.pos;
+                            _ = self.advance();
+                            while (self.peek()) |nc1| {
+                                if (std.ascii.isDigit(nc1)) _ = self.advance() else break;
+                            }
+                            return Token{
+                                .type = TokenType.number,
+                                .value = self.source[start..self.pos],
+                                .line = self.line,
+                                .column = col,
+                            };
+                        }
+                    }
                     _ = self.advance();
                     return Token{
                         .type = TokenType.condition,
@@ -200,6 +215,14 @@ test "tokenize condition" {
 
     try std.testing.expectEqual(TokenType.condition, tokens[0].type);
     try std.testing.expectEqualStrings("+", tokens[0].value);
+}
+
+test "tokenize positive number" {
+    const tokens = try tokenize(std.testing.allocator, "+42");
+    defer std.testing.allocator.free(tokens);
+
+    try std.testing.expectEqual(TokenType.number, tokens[0].type);
+    try std.testing.expectEqualStrings("+42", tokens[0].value);
 }
 
 test "tokenize negative number" {
