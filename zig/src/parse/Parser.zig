@@ -71,14 +71,7 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Program {
                 const cond: Condition = if (token.value[0] == '+') .positive else .negative;
                 i += 1;
                 if (i >= tokens.len or tokens[i].type != .identifier) return error.ExpectedInstruction;
-                const mnemonic = parseMnemonic(tokens[i].value) orelse return error.UnknownInstruction;
-                i += 1;
-                const operands = try parseOperands(allocator, tokens, &i);
-                try statements.append(allocator, Statement{ .instruction = .{
-                    .condition = cond,
-                    .op = mnemonic,
-                    .operands = operands,
-                } });
+                try appendInstruction(allocator, &statements, tokens, &i, cond);
             },
             .identifier => {
                 if (i + 1 < tokens.len and tokens[i + 1].type == .colon) {
@@ -86,15 +79,7 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Program {
                     i += 2;
                     // if something follows on the same line — let the loop handle it
                 } else {
-                    const mnemonic = parseMnemonic(token.value) orelse
-                        return error.UnknownInstruction;
-                    i += 1;
-                    const operands = try parseOperands(allocator, tokens, &i);
-                    try statements.append(allocator, Statement{ .instruction = .{
-                        .condition = null,
-                        .op = mnemonic,
-                        .operands = operands,
-                    } });
+                    try appendInstruction(allocator, &statements, tokens, &i, null);
                 }
             },
             else => return error.UnexpectedToken,
@@ -103,6 +88,25 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Program {
 
     return Program{ .statements = try statements.toOwnedSlice(allocator) };
 }
+/// Читает мнемонику из tokens[i], её операнды и кладёт инструкцию в statements.
+/// `i` должен указывать на identifier-токен мнемоники; на выходе сдвинут за операнды.
+fn appendInstruction(
+    allocator: std.mem.Allocator,
+    statements: *std.ArrayList(Statement),
+    tokens: []Tokenizer.Token,
+    i: *usize,
+    cond: ?Condition,
+) !void {
+    const mnemonic = parseMnemonic(tokens[i.*].value) orelse return error.UnknownInstruction;
+    i.* += 1;
+    const operands = try parseOperands(allocator, tokens, i);
+    try statements.append(allocator, Statement{ .instruction = .{
+        .condition = cond,
+        .op = mnemonic,
+        .operands = operands,
+    } });
+}
+
 const mnemonic_map = std.StaticStringMap(Mnemonic).initComptime(.{
     .{ "nop", Mnemonic.nop },
     .{ "mov", Mnemonic.mov },

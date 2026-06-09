@@ -35,42 +35,30 @@ pub fn emit(allocator: std.mem.Allocator, program: Parser.Program) ![]u8 {
     return try buf.toOwnedSlice(allocator);
 }
 
-test "emit simple instruction" {
-    const program = try Parser.parse(std.testing.allocator, "mov acc 1");
+fn expectEmit(source: []const u8, expected: []const u8) !void {
+    const program = try Parser.parse(std.testing.allocator, source);
     defer program.deinit(std.testing.allocator);
     const out = try emit(std.testing.allocator, program);
     defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("mov acc 1\n", out);
+    try std.testing.expectEqualStrings(expected, out);
+}
+
+test "emit simple instruction" {
+    try expectEmit("mov acc 1", "mov acc 1\n");
 }
 
 test "emit label" {
-    const program = try Parser.parse(std.testing.allocator, "loop:");
-    defer program.deinit(std.testing.allocator);
-    const out = try emit(std.testing.allocator, program);
-    defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("loop:\n", out);
+    try expectEmit("loop:", "loop:\n");
 }
 
 test "emit label and instruction" {
-    const program = try Parser.parse(std.testing.allocator, "loop:\njmp loop");
-    defer program.deinit(std.testing.allocator);
-    const out = try emit(std.testing.allocator, program);
-    defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("loop:\njmp loop\n", out);
+    try expectEmit("loop:\njmp loop", "loop:\njmp loop\n");
 }
 
 test "emit conditional instruction" {
-    const program = try Parser.parse(std.testing.allocator, "+ mov acc 1");
-    defer program.deinit(std.testing.allocator);
-    const out = try emit(std.testing.allocator, program);
-    defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("+ mov acc 1\n", out);
+    try expectEmit("+ mov acc 1", "+ mov acc 1\n");
 }
 
 test "emit negative condition" {
-    const program = try Parser.parse(std.testing.allocator, "- jmp loop");
-    defer program.deinit(std.testing.allocator);
-    const out = try emit(std.testing.allocator, program);
-    defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("- jmp loop\n", out);
+    try expectEmit("- jmp loop", "- jmp loop\n");
 }

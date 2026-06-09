@@ -1,5 +1,14 @@
 const std = @import("std");
 
+/// Разбирает `<name> <value>` из тела директивы const/alias (без префикса).
+/// Возвращает null, если имени или значения нет.
+fn parseKeyValue(rest: []const u8) ?struct { name: []const u8, value: []const u8 } {
+    var parts = std.mem.splitAny(u8, rest, " \t");
+    const name = parts.next() orelse return null;
+    const value = parts.next() orelse return null;
+    return .{ .name = name, .value = value };
+}
+
 pub fn preprocess(allocator: std.mem.Allocator, source: []const u8) ![]u8 {
     var consts = std.StringHashMap([]const u8).init(allocator);
     defer consts.deinit();
@@ -11,17 +20,11 @@ pub fn preprocess(allocator: std.mem.Allocator, source: []const u8) ![]u8 {
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t");
         if (std.mem.startsWith(u8, trimmed, "const ")) {
-            const rest = trimmed[6..];
-            var parts = std.mem.splitAny(u8, rest, " \t");
-            const name = parts.next() orelse continue;
-            const value = parts.next() orelse continue;
-            try consts.put(name, value);
+            const kv = parseKeyValue(trimmed[6..]) orelse continue;
+            try consts.put(kv.name, kv.value);
         } else if (std.mem.startsWith(u8, trimmed, "alias ")) {
-            const rest = trimmed[6..];
-            var parts = std.mem.splitAny(u8, rest, " \t");
-            const name = parts.next() orelse continue;
-            const target = parts.next() orelse continue;
-            try aliases.put(name, target);
+            const kv = parseKeyValue(trimmed[6..]) orelse continue;
+            try aliases.put(kv.name, kv.value);
         }
     }
 
@@ -61,30 +64,24 @@ pub fn preprocess(allocator: std.mem.Allocator, source: []const u8) ![]u8 {
     return out.toOwnedSlice(allocator);
 }
 
-test "const substitution" {
-    const source = "const MAX 100\nmov acc MAX";
+fn expectPreprocess(source: []const u8, expected: []const u8) !void {
     const out = try preprocess(std.testing.allocator, source);
     defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("mov acc 100\n", out);
+    try std.testing.expectEqualStrings(expected, out);
+}
+
+test "const substitution" {
+    try expectPreprocess("const MAX 100\nmov acc MAX", "mov acc 100\n");
 }
 
 test "alias substitution" {
-    const source = "alias LED p0\nmov LED acc";
-    const out = try preprocess(std.testing.allocator, source);
-    defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("mov p0 acc\n", out);
+    try expectPreprocess("alias LED p0\nmov LED acc", "mov p0 acc\n");
 }
 
 test "comment stripping" {
-    const source = "mov acc 1 # set acc to 1";
-    const out = try preprocess(std.testing.allocator, source);
-    defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("mov acc 1\n", out);
+    try expectPreprocess("mov acc 1 # set acc to 1", "mov acc 1\n");
 }
 
 test "skip include line" {
-    const source = "include helpers.asm\nmov acc 0";
-    const out = try preprocess(std.testing.allocator, source);
-    defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("mov acc 0\n", out);
+    try expectPreprocess("include helpers.asm\nmov acc 0", "mov acc 0\n");
 }

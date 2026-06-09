@@ -1,6 +1,5 @@
 const std = @import("std");
-const Parser = @import("parse/Parser.zig");
-const Emitter = @import("emit/Emmiter.zig");
+const bench_util = @import("bench_util.zig");
 
 const solutions_dirs = [_][]const u8{
     "../tests/extracted-solutions",
@@ -44,20 +43,12 @@ pub fn main(init: std.process.Init) !void {
     outer: while (true) {
         for (sources.items) |src| {
             defer _ = arena.reset(.retain_capacity);
-            const allocator = arena.allocator();
-            const program = try Parser.parse(allocator, src);
-            const out = try Emitter.emit(allocator, program);
-            _ = out;
+            try bench_util.runHot(arena.allocator(), src);
             count += 1;
             if (count >= target_iterations) break :outer;
         }
     }
 
     const elapsed = start.untilNow(io, .awake);
-    const ms = elapsed.toMilliseconds();
-    const throughput = count * 1000 / (@as(usize, @intCast(ms)) + 1);
-
-    std.debug.print("iterations: {d}\n", .{count});
-    std.debug.print("time:       {d} ms\n", .{ms});
-    std.debug.print("throughput: {d} ops/sec\n", .{throughput});
+    bench_util.reportThroughput(count, elapsed.toMilliseconds());
 }

@@ -77,69 +77,42 @@ const Tokenizer = struct {
                         _ = self.advance();
                     }
                 },
-                '+' => {
+                // '+'/'-' перед цифрой — знаковое число (+42, -42),
+                // иначе одиночный condition-токен ('+' / '-').
+                '+', '-' => {
+                    const start = self.pos;
                     if (self.peekAt(1)) |nc| {
                         if (std.ascii.isDigit(nc)) {
-                            const start = self.pos;
                             _ = self.advance();
-                            while (self.peek()) |nc1| {
-                                if (std.ascii.isDigit(nc1)) _ = self.advance() else break;
-                            }
-                            return Token{
-                                .type = TokenType.number,
-                                .value = self.source[start..self.pos],
-                                .line = self.line,
-                                .column = col,
-                            };
+                            return self.readNumber(start, col);
                         }
                     }
                     _ = self.advance();
                     return Token{
                         .type = TokenType.condition,
-                        .value = "+",
-                        .line = self.line,
-                        .column = col,
-                    };
-                },
-                '-' => {
-                    if (self.peekAt(1)) |nc2| {
-                        if (std.ascii.isDigit(nc2)) {
-                            const start = self.pos;
-                            _ = self.advance();
-                            while (self.peek()) |nc| {
-                                if (std.ascii.isDigit(nc)) _ = self.advance() else break;
-                            }
-                            return Token{
-                                .type = TokenType.number,
-                                .value = self.source[start..self.pos],
-                                .line = self.line,
-                                .column = col,
-                            };
-                        }
-                    }
-                    _ = self.advance();
-                    return Token{
-                        .type = TokenType.condition,
-                        .value = "-",
-                        .line = self.line,
-                        .column = col,
-                    };
-                },
-                '0'...'9' => {
-                    const start = self.pos;
-                    while (self.peek()) |nc| {
-                        if (std.ascii.isDigit(nc)) _ = self.advance() else break;
-                    }
-                    return Token{
-                        .type = TokenType.number,
                         .value = self.source[start..self.pos],
                         .line = self.line,
                         .column = col,
                     };
                 },
+                '0'...'9' => return self.readNumber(self.pos, col),
                 else => _ = self.advance(),
             }
         }
+    }
+
+    /// Дочитывает цифры до конца числа. `start` — индекс начала value
+    /// (для знаковых чисел указывает на знак, который уже учли вызывающие).
+    fn readNumber(self: *Tokenizer, start: usize, col: u32) Token {
+        while (self.peek()) |c| {
+            if (std.ascii.isDigit(c)) _ = self.advance() else break;
+        }
+        return Token{
+            .type = TokenType.number,
+            .value = self.source[start..self.pos],
+            .line = self.line,
+            .column = col,
+        };
     }
 
     fn peek(self: *Tokenizer) ?u8 {
