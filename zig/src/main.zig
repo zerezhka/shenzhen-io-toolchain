@@ -1,5 +1,8 @@
 const std = @import("std");
 const options = @import("options");
+const Preprocessor = @import("preprocessor/ExtensionPreprocessor.zig");
+const Parser = @import("parse/Parser.zig");
+const Emitter = @import("emit/Emmiter.zig");
 
 const version = options.version;
 
@@ -19,8 +22,10 @@ const help =
     \\
 ;
 
-pub fn main(init: std.process.Init.Minimal) u8 {
-    var args = std.process.Args.Iterator.init(init.args);
+pub fn main(init: std.process.Init) u8 {
+    const io = init.io;
+    const gpa = init.gpa;
+    var args = std.process.Args.Iterator.init(init.minimal.args);
     _ = args.skip(); // skip argv[0]
 
     const cmd = args.next() orelse {
@@ -39,7 +44,14 @@ pub fn main(init: std.process.Init.Minimal) u8 {
     }
 
     if (std.mem.eql(u8, cmd, "assemble")) {
-        std.debug.print("TODO: assemble not implemented yet\n", .{});
+        const path = args.next() orelse {
+            std.debug.print("usage: sio assemble <file>\n", .{});
+            return 1;
+        };
+        assemble(io, gpa, path) catch |err| {
+            std.debug.print("error: {}\n", .{err});
+            return 1;
+        };
         return 0;
     }
 
@@ -55,6 +67,25 @@ pub fn main(init: std.process.Init.Minimal) u8 {
 
     std.debug.print("unknown command: {s}\n\n{s}", .{ cmd, help });
     return 1;
+}
+
+fn assemble(io: std.Io, gpa: std.mem.Allocator, path: []const u8) !void {
+    const source = try std.Io.Dir.cwd().readFileAlloc(io, path, gpa, std.Io.Limit.limited(1 << 20));
+    defer gpa.free(source);
+
+    const preprocessed = try Preprocessor.preprocess(gpa, source);
+    defer gpa.free(preprocessed);
+
+    const program = try Parser.parse(gpa, preprocessed);
+    defer program.deinit(gpa);
+
+    const out = try Emitter.emit(gpa, program);
+    defer gpa.free(out);
+
+    var buf: [4096]u8 = undefined;
+    var fw = std.Io.File.stdout().writer(io, &buf);
+    try fw.interface.writeAll(out);
+    try fw.interface.flush();
 }
 
 test {
