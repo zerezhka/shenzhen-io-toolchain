@@ -44,5 +44,16 @@ pub fn build(b: *std.Build) void {
         }),
     });
     const run_bench = b.addRunArtifact(bench);
-    b.step("bench", "Run benchmark").dependOn(&run_bench.step);
+    b.step("bench", "Run raw parse→emit benchmark (synthetic sample)").dependOn(&run_bench.step);
+
+    const bench_fs = b.addExecutable(.{
+        .name = "bench_fs",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/bench_fs.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    const run_bench_fs = b.addRunArtifact(bench_fs);
+    b.step("bench-fs", "Run filesystem benchmark (real .asm files)").dependOn(&run_bench_fs.step);
 }
