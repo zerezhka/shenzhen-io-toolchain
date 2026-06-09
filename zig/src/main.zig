@@ -60,4 +60,5 @@ pub fn main(init: std.process.Init.Minimal) u8 {
 test {
     _ = @import("parse/Parser.zig");
     _ = @import("emit/Emmiter.zig");
+    _ = @import("preprocessor/ExtensionPreprocessor.zig");
 }
