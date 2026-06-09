@@ -20,7 +20,12 @@ pub fn emit(allocator: std.mem.Allocator, program: Parser.Program) ![]u8 {
                 try buf.appendSlice(allocator, @tagName(instr.op));
                 for (instr.operands) |operand| {
                     try buf.appendSlice(allocator, " ");
-                    try buf.appendSlice(allocator, operand);
+                    // vanilla SIO has no +N syntax; strip + for C# compat
+                    const normalized = if (operand.len > 1 and operand[0] == '+' and std.ascii.isDigit(operand[1]))
+                        operand[1..]
+                    else
+                        operand;
+                    try buf.appendSlice(allocator, normalized);
                 }
                 try buf.appendSlice(allocator, "\n");
             },
