@@ -7,7 +7,7 @@ using Sio.Assembler.Parse;
 
 namespace Sio.Cli.Commands
 {
-    internal sealed class BenchFsCommand
+    internal sealed class BenchRealCommand
     {
         private static readonly string[] SolutionsDirs = {
             "tests/extracted-solutions",

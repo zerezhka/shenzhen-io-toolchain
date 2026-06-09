@@ -33,8 +33,8 @@ namespace Sio.Cli
                     return testCmd.Execute(commandArgs);
                 case "bench":
                     return new BenchCommand().Execute();
-                case "bench-fs":
-                    return new BenchFsCommand().Execute();
+                case "bench-real":
+                    return new BenchRealCommand().Execute();
                 default:
                     Console.Error.WriteLine($"sio: unknown command: {command}");
                     Console.Error.WriteLine("Usage: sio <assemble|simulate|test> [args]");
