@@ -92,4 +92,5 @@ test {
     _ = @import("parse/Parser.zig");
     _ = @import("emit/Emmiter.zig");
     _ = @import("preprocessor/ExtensionPreprocessor.zig");
+    _ = @import("simulate/Simulator.zig");
 }
