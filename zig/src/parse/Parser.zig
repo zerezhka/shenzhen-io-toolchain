@@ -84,6 +84,7 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Program {
                 if (i + 1 < tokens.len and tokens[i + 1].type == .colon) {
                     try statements.append(allocator, Statement{ .label = token.value });
                     i += 2;
+                    // if something follows on the same line — let the loop handle it
                 } else {
                     const mnemonic = parseMnemonic(token.value) orelse
                         return error.UnknownInstruction;
@@ -184,6 +185,16 @@ test "parse negative condition" {
     defer program.deinit(std.testing.allocator);
 
     try std.testing.expectEqual(Condition.negative, program.statements[0].instruction.condition.?);
+}
+
+test "parse label and instruction on same line" {
+    const program = try parse(std.testing.allocator, "a:+ mov acc 1");
+    defer program.deinit(std.testing.allocator);
+
+    try std.testing.expectEqual(@as(usize, 2), program.statements.len);
+    try std.testing.expectEqualStrings("a", program.statements[0].label);
+    try std.testing.expectEqual(Mnemonic.mov, program.statements[1].instruction.op);
+    try std.testing.expectEqual(Condition.positive, program.statements[1].instruction.condition.?);
 }
 
 test "parse unknown instruction returns error" {
