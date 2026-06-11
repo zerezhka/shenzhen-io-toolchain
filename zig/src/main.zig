@@ -34,12 +34,12 @@ pub fn main(init: std.process.Init) u8 {
     };
 
     if (std.mem.eql(u8, cmd, "-h") or std.mem.eql(u8, cmd, "--help")) {
-        std.debug.print("{s}", .{help});
+        printStdout(io, "{s}", .{help}) catch return 1;
         return 0;
     }
 
     if (std.mem.eql(u8, cmd, "--version") or std.mem.eql(u8, cmd, "-v")) {
-        std.debug.print("sio {s}\n", .{version});
+        printStdout(io, "sio {s}\n", .{version}) catch return 1;
         return 0;
     }
 
@@ -67,6 +67,15 @@ pub fn main(init: std.process.Init) u8 {
 
     std.debug.print("unknown command: {s}\n\n{s}", .{ cmd, help });
     return 1;
+}
+
+/// Обычный вывод — в stdout (std.debug.print пишет в stderr и ломает
+/// пайпы вроде `sio --version | grep`); stderr оставляем ошибкам.
+fn printStdout(io: std.Io, comptime fmt: []const u8, args: anytype) !void {
+    var buf: [4096]u8 = undefined;
+    var fw = std.Io.File.stdout().writer(io, &buf);
+    try fw.interface.print(fmt, args);
+    try fw.interface.flush();
 }
 
 fn assemble(io: std.Io, gpa: std.mem.Allocator, path: []const u8) !void {
