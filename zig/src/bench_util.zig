@@ -1,6 +1,6 @@
 const std = @import("std");
 const Parser = @import("parse/Parser.zig");
-const Emitter = @import("emit/Emmiter.zig");
+const Emitter = @import("emit/Emitter.zig");
 
 /// Один прогон parse→emit, результат отбрасывается. Аллокатор — обычно arena,
 /// которую вызывающий ресетит между итерациями.

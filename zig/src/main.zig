@@ -2,7 +2,7 @@ const std = @import("std");
 const options = @import("options");
 const Preprocessor = @import("preprocessor/ExtensionPreprocessor.zig");
 const Parser = @import("parse/Parser.zig");
-const Emitter = @import("emit/Emmiter.zig");
+const Emitter = @import("emit/Emitter.zig");
 
 const version = options.version;
 
@@ -90,7 +90,7 @@ fn assemble(io: std.Io, gpa: std.mem.Allocator, path: []const u8) !void {
 
 test {
     _ = @import("parse/Parser.zig");
-    _ = @import("emit/Emmiter.zig");
+    _ = @import("emit/Emitter.zig");
     _ = @import("preprocessor/ExtensionPreprocessor.zig");
     _ = @import("simulate/Simulator.zig");
 }
