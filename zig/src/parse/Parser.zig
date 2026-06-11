@@ -99,6 +99,10 @@ fn appendInstruction(
 ) !void {
     const mnemonic = parseMnemonic(tokens[i.*].value) orelse return error.UnknownInstruction;
     i.* += 1;
+    // TODO(silent-fail): число операндов не проверяется — `mov` без операндов или
+    // `jmp a b c` парсятся молча, и эмиттер выпустит код, который игра не
+    // примет. Нужна проверка числа операндов по мнемонике (одна на оба пути:
+    // assemble и build() симулятора).
     const operands = try parseOperands(allocator, tokens, i);
     try statements.append(allocator, Statement{ .instruction = .{
         .condition = cond,

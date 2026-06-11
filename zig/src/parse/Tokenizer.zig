@@ -96,6 +96,10 @@ const Tokenizer = struct {
                     };
                 },
                 '0'...'9' => return self.readNumber(self.pos, col),
+                // TODO(silent-fail): незнакомый символ молча съедается.
+                // Из-за этого `mov acc, 1` (запятая), `;`-комментарий и
+                // `/* */` «работают», выдавая мусор. Нужен invalid-токен,
+                // чтобы парсер мог упасть с ошибкой (zig-code-review.md, топ-1).
                 else => _ = self.advance(),
             }
         }
