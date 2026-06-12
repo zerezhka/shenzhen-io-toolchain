@@ -68,18 +68,26 @@ What we have instead (proxies, not originals):
 | Source | Coverage | What it validates |
 |---|---|---|
 | Community solutions (483 chips, `third_party/`) | most levels | **parse/assemble only** — no I/O behavior (see [validation-results.md](validation-results.md)) |
-| Verification-tab screenshots (94 PNGs) | partial | waveforms readable by a human; manual transcription needed (see [community-test-data.md](community-test-data.md)) |
+| Verification-tab screenshots (76 usable PNGs, shiawasenahikari set) | all 41 campaign levels + bonuses | one sampled run per level; binary/analog simple-I/O traces are pixel-extractable without OCR, XBus needs OCR or manual reading (see [community-test-data.md](community-test-data.md)) |
+| Manual PDF Supplemental Data + level descriptions | ~10 levels reference the manual | **exact behavioral formulas** (e.g. amplifier's `AUDIO_OUT = (AUDIO_IN - 50) x 4 + 50`, unknown-device's x/y→power map) — expected outputs computable from inputs, clean-room |
 | Save-file metrics (`[power-usage]`, `[lines-of-code]`) | every solved level | potential **simulation oracle**: re-simulating a solution must reproduce its recorded power usage — requires full multi-chip board simulation |
 | Hand-written YAML tests (`examples/us1–us3`, `examples/multi-chip`) | synthetic examples only | simulator behavior, but not against any real game level |
-| Level descriptions (`descriptions.en/*.txt`) | all 45 levels | human-readable requirements only, no signal data |
+| Level descriptions (`descriptions.en/*.txt`) | all 45 levels | human-readable requirements; for fixed-output levels they confirm the screenshot waveform *is* the spec ("fixed, repeating signals") |
 
-Realistic paths to per-level test data, in increasing order of effort:
+Realistic paths to per-level test data, in increasing order of effort
+(assessed in detail in [community-test-data.md](community-test-data.md)):
 
-1. Transcribe waveforms from the 94 verification screenshots into YAML test
-   definitions (highest-value levels first).
-2. Use save-file `[power-usage]` as a cheap regression oracle once multi-chip
+1. Hand-transcribe the binary-waveform levels (camera, pulse generator,
+   animated sign) from the shiawasenahikari screenshots — readable today, no
+   tooling.
+2. Write a pixel-extraction script for the shiawasenahikari set (uniform
+   1920×1080, orange polylines on dark grid) to bulk-extract binary/analog
+   traces; only XBus levels need OCR. Where the manual publishes the
+   input→output rule (~10 levels), compute expected outputs instead of
+   transcribing them.
+3. Use save-file `[power-usage]` as a cheap regression oracle once multi-chip
    simulation works.
-3. The game logic is C#/Mono, but `Shenzhen.exe` is Eazfuscator-obfuscated and
+4. The game logic is C#/Mono, but `Shenzhen.exe` is Eazfuscator-obfuscated and
    stores tests as generator *functions*, not data — see the time-boxed
    investigation in [deobfuscation-attempt.md](deobfuscation-attempt.md). Do
    **not** redistribute anything extracted this way

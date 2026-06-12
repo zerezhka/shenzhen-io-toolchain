@@ -14,6 +14,11 @@ This repo can *optionally* consume **plain-text assets** and **signal dumps** ex
   `gen` and `@` appear in **neither** PDF — their only primary source is the
   in-game email `Content/messages.en/undocumented-instruction.txt`
   (see [undocumented-instructions.md](undocumented-instructions.md)).
+  The English manual's **Supplemental Data** section also publishes exact
+  behavioral specs for ~10 levels whose descriptions point to it (e.g. the
+  amplifier formula, the unknown-device x/y→power map) — usable as a
+  clean-room oracle for test authoring
+  (see [community-test-data.md](community-test-data.md)).
 
 These are helpful for:
 

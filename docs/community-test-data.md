@@ -8,7 +8,9 @@ While the game doesn't expose test cases in an extractable format, the community
 
 ### Available Resources
 
-We have **94 screenshots** with verification timing diagrams in our third-party solution repositories:
+We have **94 screenshots** in our third-party solution repositories, but the
+two sources are not equally useful (verified 2026-06-12 by inspecting crops at
+full resolution):
 
 ```bash
 # Count of screenshots with potential verification data
@@ -16,6 +18,37 @@ find third_party/solutions -name "*.png" | wc -l          # 18 screenshots
 find third_party/solutions-shiawasenahikari -name "*.png" | wc -l  # 76 screenshots
 find third_party/solutions-stinkingbanana -name "*.png" | wc -l    # 0 screenshots
 ```
+
+- **`solutions-shiawasenahikari` (76 PNGs) — the primary source.** Uniform
+  1920×1080 layout, verification tab open with waveforms visible at the bottom
+  of the frame (sampled: levels 001, 003, 012, 027 — all show it), numbered
+  folders covering all 41 campaign levels plus bonus levels.
+- **`solutions` (sunzenshen, 18 PNGs) — mostly not useful.** The sampled
+  screenshots show the INFORMATION tab with the verification panel collapsed.
+
+### Waveform classes and how transcribable each is
+
+The verification panels fall into three classes (examples are crops at 2×
+upscale from the shiawasenahikari set):
+
+1. **Binary simple I/O** (e.g. 001 fake surveillance camera, 003 diagnostic
+   pulse generator): crisp two-level orange traces over a per-time-unit grid.
+   Trivially human-readable; also machine-extractable (see Option 2). For the
+   camera the description says the signals are "fixed, repeating", so the
+   screenshot *is* the spec, not just one sampled run.
+2. **Analog simple I/O** (e.g. 012 unknown optimization device): continuous
+   0–100 traces, value encoded as trace height. Readable, but pixel
+   measurement is more reliable than eyeballing.
+3. **XBus numeric** (e.g. 027 deep-sea sensor grid): packet values rendered as
+   small number boxes. Readable at 2× zoom, so manual transcription works but
+   is tedious; this is the only class where automation would need OCR.
+
+Inputs are rendered as brighter orange traces than expected outputs, which
+disambiguates direction even without reading the port-label text.
+
+**Caveat — visible window only**: the panel shows only the on-screen portion
+of the timeline; a verification run may extend past the right edge. Tests
+transcribed from a screenshot should bound `cycleLimit` to the visible span.
 
 ### Example: Unknown Optimization Device
 
@@ -38,9 +71,12 @@ From verification screenshots, we can identify:
 
 ### What Cannot Be Automatically Extracted
 
-- **Exact Values**: Screenshots show visual waveforms, not numeric data
-- **Cycle Numbers**: X-axis is visible but requires OCR and manual mapping
+- **XBus packet values**: rendered as small number boxes — needs OCR (or
+  manual reading at zoom); simple-I/O waveform *values* are extractable from
+  trace height, see Option 2
 - **Port Indices**: The game uses semantic names, we use `p0`, `p1`, etc.
+- **The full run**: only the visible timeline window is captured (see caveat
+  above)
 
 ## Approaches for Test Generation
 
@@ -81,22 +117,49 @@ cycleLimit: 1000
 - Time-consuming (but only needs to be done once per puzzle)
 - Requires domain knowledge
 
-### Option 2: OCR + Image Processing (Complex)
+### Option 2: Pixel Extraction (Tractable for Simple I/O)
 
-Use image processing to extract timing diagrams:
+Earlier versions of this doc rated automation as "very complex (OpenCV,
+Tesseract, custom waveform parser)". Inspection of the actual pixels
+(2026-06-12) shows that is overstated for the shiawasenahikari set:
 
-1. **OCR** to read port names and cycle numbers
-2. **Waveform analysis** to extract signal transitions
-3. **Value extraction** from waveform heights
+- The verification panel sits at a consistent position in every 1920×1080
+  screenshot.
+- Waveforms are single orange polylines on a near-black background, with a
+  visible per-time-unit grid — a small Python/PIL script can recover binary
+  levels (high/low per column) and analog values (trace height per column)
+  with **no OCR at all**.
+- Port labels are few per level and can simply be hand-typed.
+- Only **XBus levels** need OCR (Tesseract on the number boxes) or manual
+  reading.
 
 **Pros:**
-- Could automate test generation for all 94 screenshots
+- Could bulk-generate test vectors for most of the 41 campaign levels
+- More accurate than eyeballing analog trace heights
 
 **Cons:**
-- Very complex implementation (OpenCV, Tesseract, custom waveform parser)
-- Error-prone (requires validation of every generated test)
-- Screenshots may vary in quality/format
-- Not all screenshots show verification tab
+- Generated tests still need a human spot-check pass
+- XBus levels remain manual/OCR
+- Captures one sampled run, truncated to the visible timeline window
+
+### Option 2b: Clean-Room Oracle from Manual + Descriptions
+
+For input→output puzzles, the expected output is a *function* of the input,
+and for some levels that function is published verbatim in local assets:
+
+- **10 of 45 level descriptions** (`descriptions.en/`) point to the manual for
+  their behavioral spec (`grep -rln -i manual descriptions.en/` → 10 files:
+  unknown-device, amplifier, bartender, haunted-doll, comm-badge,
+  spoiler-blocker, targeting-laser, shoes, scaffold-printer, meat-printer).
+- The manual's **Supplemental Data** section contains exact formulas — e.g.
+  the harmonic maximization engine's `AUDIO_OUT = (AUDIO_IN - 50) x 4 + 50`
+  and the unknown optimization device's full x/y→power "2A27 GEOMETRIC
+  SPECIFICATIONS" map (verified via `pdftotext`).
+
+So for these levels: transcribe (or pixel-extract) only the **input** traces
+from a screenshot, then *compute* the expected outputs from the published
+rule. This yields a complete test vector without reverse-engineering anything,
+and the computed outputs double-check the transcribed ones.
 
 ### Option 3: Community Contribution
 
@@ -118,12 +181,12 @@ Create a simple web form or spreadsheet where players can:
 
 ## Recommendation
 
-**Start with Option 1** for puzzles you personally want to test:
-
-1. Pick 5-10 interesting puzzles
-2. Manually create test cases while viewing verification screenshots
-3. Document the process for contributors
-4. Share test cases in the repo for others to use/extend
+1. **Option 1 now** for the binary-waveform priority levels (camera, pulse
+   generator, animated sign) — readable today with no tooling.
+2. **Option 2 pixel-extraction script** against the shiawasenahikari set to
+   bulk-generate binary/analog vectors, with manual spot-checks.
+3. **Option 2b** for the 10 manual-specified levels — compute expected outputs
+   from the published rules instead of transcribing them.
 
 **Future Enhancement (Option 3):**
 - Create a simple test case template generator script
@@ -147,8 +210,9 @@ Representative puzzles to prioritize:
 
 ## Resources
 
-- [sunzenshen/shenzhen-io-solutions](https://github.com/sunzenshen/shenzhen-io-solutions) - 18 PNG screenshots
-- [shiawasenahikari/SHENZHEN-IO-Solutions](https://github.com/shiawasenahikari/SHENZHEN-IO-Solutions) - 76 PNG screenshots
+- [shiawasenahikari/SHENZHEN-IO-Solutions](https://github.com/shiawasenahikari/SHENZHEN-IO-Solutions) - 76 PNG screenshots, verification tab visible — the primary source
+- [sunzenshen/shenzhen-io-solutions](https://github.com/sunzenshen/shenzhen-io-solutions) - 18 PNG screenshots, mostly INFORMATION tab only
+- Game manual PDF (`Content/SHENZHEN IO Manual (English).pdf`, local install) - exact behavioral formulas for ~10 levels in the Supplemental Data section
 - Game save files - Input test data only, no expected outputs
 - Steam Community guides - Descriptive, not machine-readable
 
