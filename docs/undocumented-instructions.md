@@ -2,7 +2,18 @@
 
 ## Overview
 
-Shenzhen I/O has several undocumented instructions that were included in the original Chinese documentation but omitted from the English manual. This is presented in-game as a "translation oversight" as part of the storyline.
+Shenzhen I/O has two instructions that appear in **neither** shipped reference
+manual. The in-game storyline presents them as a "translation oversight" from
+the Chinese documentation, but this is lore: we verified (via `pdftotext`) that
+both `SHENZHEN IO Manual (English).pdf` and `SHENZHEN IO Manual (Chinese).pdf`
+(shipped in `Content/` of the game install, see
+[local-original-assets.md](local-original-assets.md)) list the same 15
+instructions — `gen` and `@` are absent from both; the Chinese manual's
+instruction list goes directly from `slx P` to `add R/I`.
+
+The only primary source for their syntax and semantics is the in-game email
+`Content/messages.en/undocumented-instruction.txt`, which gives the `gen`
+expansion quoted below and defines `@` as a once-only prefix.
 
 ## Discovered Instructions
 
@@ -37,31 +48,31 @@ gen p0 5 5
 jmp loop
 ```
 
-### 2. `@` - Initialization Marker
+### 2. `@` - Once-Only Prefix
 
 **Syntax:**
 ```
-@ [label or line]
+@ instruction
 ```
 
 **Purpose:**
-Used for program counter initialization or reset. Exact behavior is somewhat inconsistent and context-dependent.
-
-**Known Issues:**
-- Some users report inconsistencies during test execution
-- Behavior may vary between different MCU types
-- Use with caution
+Per the in-game email: "Putting an @ symbol at the beginning of an instruction
+causes it to execute only once." It is a prefix (like the `+`/`-` conditional
+prefixes), typically used for initialization without spending extra
+instructions on a separate setup section.
 
 **Example:**
 ```
-@ start
-# ... code ...
-start:
-mov 0 acc
+@ mov 0 acc    # runs only on the first pass
+loop:
+add 1
+jmp loop
 ```
 
 ## Sources
 
+- **Primary**: in-game email `Content/messages.en/undocumented-instruction.txt`
+  (local game install, gitignored — see [local-original-assets.md](local-original-assets.md))
 - [Shenzhen I/O Wiki - Gen Instruction](https://shenzhen-io.fandom.com/wiki/Gen_%28instruction%29)
 - [Steam Community Discussions](https://steamcommunity.com/app/504210/discussions/)
 - [GOG Forums - Chinese Localization Manual](https://www.gog.com/forum/shenzhen_io/chinese_localisation_manual)

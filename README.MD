@@ -73,6 +73,8 @@ Or use the wrapper script in the project root:
 - **[docs/timing-model.md](docs/timing-model.md)** — Cycle-accurate timing
 - **[docs/undocumented-instructions.md](docs/undocumented-instructions.md)** — `gen` and `@` instructions
 - **[docs/MC4000-vs-MC6000.md](docs/MC4000-vs-MC6000.md)** — Microcontroller differences
+- **[docs/reference-simulators.md](docs/reference-simulators.md)** — Reference simulators and instruction coverage comparison
+- **[docs/known-gaps.md](docs/known-gaps.md)** — What's missing (`gen`/`@` execution, Zig simulator, per-level test data)
 
 ## Editor Support
 

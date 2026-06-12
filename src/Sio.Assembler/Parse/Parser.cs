@@ -18,7 +18,7 @@ namespace Sio.Assembler.Parse
             "teq", "tgt", "tlt", "tcp",
             // Arithmetic instructions
             "add", "sub", "mul", "not", "dgt", "dst",
-            // Undocumented instructions (Chinese manual)
+            // Undocumented instructions (in-game email; absent from both manual PDFs)
             "gen", "@"
         };
 
