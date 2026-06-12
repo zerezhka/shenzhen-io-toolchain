@@ -1,0 +1,5 @@
+Puzzle ID: Sz023
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: aquaponics-maintenance-robot-0.txt

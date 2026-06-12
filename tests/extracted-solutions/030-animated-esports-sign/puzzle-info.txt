@@ -1,0 +1,5 @@
+Puzzle ID: Sz001
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: animated-esports-sign-0.txt

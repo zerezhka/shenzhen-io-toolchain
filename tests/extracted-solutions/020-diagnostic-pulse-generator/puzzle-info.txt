@@ -1,0 +1,5 @@
+Puzzle ID: Sz002
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: diagnostic-pulse-generator-0.txt

@@ -1,0 +1,5 @@
+Puzzle ID: Sz030
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New Design 1
+Source File: control-signal-amplifier-0.txt

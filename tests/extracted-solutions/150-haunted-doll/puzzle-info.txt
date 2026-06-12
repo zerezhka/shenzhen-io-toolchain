@@ -1,0 +1,5 @@
+Puzzle ID: Sz008
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: haunted-doll-0.txt

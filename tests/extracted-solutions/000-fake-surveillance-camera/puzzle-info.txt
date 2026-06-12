@@ -1,0 +1,5 @@
+Puzzle ID: Sz000
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: Using undocumented instructions
+Source File: fake-surveillance-camera-1.txt

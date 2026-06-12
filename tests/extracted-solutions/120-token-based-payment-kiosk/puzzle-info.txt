@@ -1,0 +1,5 @@
+Puzzle ID: Sz009
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: token-based-payment-kiosk-0.txt

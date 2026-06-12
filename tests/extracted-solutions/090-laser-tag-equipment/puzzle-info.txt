@@ -1,0 +1,5 @@
+Puzzle ID: Sz048
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: laser-tag-equipment-0.txt

@@ -1,0 +1,5 @@
+Puzzle ID: Sz035
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: virtual-reality-buzzer-0.txt

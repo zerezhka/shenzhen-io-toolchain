@@ -1,0 +1,5 @@
+Puzzle ID: Sz028
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: drinking-game-scorekeeper-0.txt

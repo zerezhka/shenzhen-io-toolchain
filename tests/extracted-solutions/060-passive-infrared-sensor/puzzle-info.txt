@@ -1,0 +1,5 @@
+Puzzle ID: Sz005
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: passive-infrared-sensor-0.txt

@@ -1,0 +1,5 @@
+Puzzle ID: Sz010
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: color-changing-vape-pen-0.txt

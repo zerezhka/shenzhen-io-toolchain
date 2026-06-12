@@ -1,0 +1,5 @@
+Puzzle ID: Sz011
+Puzzle Title: Unknown
+Game File: unknown
+Solution Name: New design 1
+Source File: wireless-game-controller-0.txt
