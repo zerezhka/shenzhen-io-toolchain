@@ -117,7 +117,12 @@ cycleLimit: 1000
 - Time-consuming (but only needs to be done once per puzzle)
 - Requires domain knowledge
 
-### Option 2: Pixel Extraction (Tractable for Simple I/O)
+### Option 2: Pixel Extraction (IMPLEMENTED — `tools/pixel-extractor/`)
+
+> **Status 2026-06-12**: implemented for binary simple I/O; first extracted
+> tests live in `examples/extracted/` (fake surveillance camera, diagnostic
+> pulse generator), overlay-verified and pinned by golden tests. See
+> `specs/002-pixel-extractor/` for the full plan.
 
 Earlier versions of this doc rated automation as "very complex (OpenCV,
 Tesseract, custom waveform parser)". Inspection of the actual pixels

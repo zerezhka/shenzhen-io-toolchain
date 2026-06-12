@@ -1,0 +1,15 @@
+level: "001-fake-surveillance-camera"
+puzzle: "Sz000"
+screenshots:
+  - third_party/solutions-shiawasenahikari/001-fake-surveillance-camera/screenshot0.png
+program: third_party/solutions-shiawasenahikari/001-fake-surveillance-camera/fake-surveillance-camera-0.txt
+traces:                      # top-to-bottom order in the verification panel
+  - name: active
+    direction: output
+    class: binary
+  - name: network
+    direction: output
+    class: binary
+ports:
+  active: p0
+  network: p1

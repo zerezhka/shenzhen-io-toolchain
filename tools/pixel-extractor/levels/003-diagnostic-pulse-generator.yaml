@@ -1,0 +1,15 @@
+level: "003-diagnostic-pulse-generator"
+puzzle: "Sz002"
+screenshots:
+  - third_party/solutions-shiawasenahikari/003-diagnostic-pulse-generator/screenshot0.png
+program: third_party/solutions-shiawasenahikari/003-diagnostic-pulse-generator/diagnostic-pulse-generator-0.txt
+traces:                      # top-to-bottom order in the verification panel
+  - name: button
+    direction: input
+    class: binary
+  - name: pulse
+    direction: output
+    class: binary
+ports:
+  button: p0
+  pulse: p1

@@ -222,6 +222,61 @@ metadataRefs:
 
 These files are loaded but not embedded in test outputs. They're useful for documentation and debugging.
 
+## Format Version 2.0 (multi-chip boards)
+
+`formatVersion: "2.0"` extends a case to a whole board (used by
+`examples/multi-chip/` and all generated tests in `examples/extracted/`):
+
+- **`chips`** (array): `{id, type, program}` — declare chips explicitly, or
+- **`saveFile`** (string): path to a community save file; chips and wiring are
+  loaded from its `[chip]` sections and `[traces]` grid.
+- **`connections`** (array): `{from: "chipId.pN", to: "chipId.pN", type: simple|xbus}`
+  for explicit wiring between chips.
+- **`inputs[].target`** / **`expectedOutputs[].source`**: address a pin as
+  `"chipId.pN"` instead of using `portMappings`.
+
+### Level-terminal binding (`level.<name>`)
+
+Tests that describe a *game level's* behavior (rather than a specific board)
+address the puzzle's I/O terminals by their in-game name:
+
+```yaml
+inputs:
+  - target: "level.button"     # the level's named input terminal
+expectedOutputs:
+  - source: "level.pulse"      # the level's named output terminal
+```
+
+Resolving `level.<name>` to a concrete chip pin on the loaded board is the
+runner's job (it depends on which terminal each chip is wired to in the save
+file). **Status**: convention defined here and emitted by the pixel extractor;
+not yet implemented by the C# test runner — a simulator that wants to run
+these tests must provide the binding.
+
+### Timeline convention for level tests
+
+One cycle index in a level test equals **one verification-panel time unit**
+(one sleep unit / `slp 1`), because that is the only clock the game's
+verification waveforms encode. Inputs carry one sample per time unit;
+expected outputs are `cycle-exact` events on the same clock. `cycleLimit` is
+the number of full time units the source screenshot shows — a sampled window,
+not the level's full run length.
+
+### `reviewStatus` (generated tests)
+
+Optional top-level field, default `reviewed` when absent (hand-written tests
+are unaffected):
+
+```yaml
+reviewStatus: unreviewed   # machine-generated, pending human spot-check
+```
+
+Machine-generated tests (see `tools/pixel-extractor/`) are emitted as
+`unreviewed` with provenance comments naming the source screenshot and mapping
+config. A human flips the field to `reviewed` after spot-checking the values
+against the source; only `reviewed` tests should be relied on as correctness
+oracles.
+
 ## Running Tests
 
 ```bash
