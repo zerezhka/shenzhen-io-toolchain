@@ -20,14 +20,14 @@ pub const Machine = struct {
     }
 
     pub fn step(self: *Machine) !void {
-        if (self.cpu.pc >= self.program.instructions.len) return;
-
         if (self.sleep_remaining > 0) {
             self.sleep_remaining -= 1;
             self.cycles += 1;
             if (self.trace) self.printTrace("slp", self.cpu.pc);
             return;
         }
+
+        if (self.cpu.pc >= self.program.instructions.len) return;
 
         const instr = self.program.instructions[self.cpu.pc];
 
@@ -140,6 +140,7 @@ pub const Machine = struct {
                 const tts = try CpuModule.read(&self.cpu, instr.operands[0]);
                 self.sleep_remaining = @intCast(tts);
             },
+            // gen expanded at build time into mov/slp/mov/slp
             else => {
                 return error.NotYetImplemented;
             },
@@ -568,4 +569,59 @@ test "5.4 jmp loop executes repeatedly" {
     try m.step(); // jmp loop → pc=0
     try std.testing.expectEqual(@as(usize, 0), m.cpu.pc);
     try std.testing.expectEqual(@as(u64, 4), m.cycles);
+}
+
+// --- Step 5.10: gen ---
+
+test "5.10 gen: expands to mov/slp/mov/slp, total = 1+X+1+Y" {
+    const parsed = try Parser.parse(std.testing.allocator, "gen p0 3 2\nnop");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    // gen p0 3 2 → 4 instructions + nop = 5 instructions
+    try std.testing.expectEqual(@as(usize, 5), program.instructions.len);
+
+    var m = Machine.init(program, false);
+    try m.run(1000);
+    try std.testing.expectEqual(@as(u64, 10), m.cycles); // 1(mov)+1+3(slp 3)+1(mov)+1+2(slp 2)+1(nop)
+}
+
+test "5.10 gen: port ends at 0" {
+    const parsed = try Parser.parse(std.testing.allocator, "gen p0 2 2");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.run(1000);
+    try std.testing.expectEqual(@as(i32, 0), m.cpu.ports[0]);
+}
+
+test "5.10 gen: port is 100 after first mov" {
+    const parsed = try Parser.parse(std.testing.allocator, "gen p0 3 2");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step(); // mov 100 p0
+    try std.testing.expectEqual(@as(i32, 100), m.cpu.ports[0]);
+    try std.testing.expectEqual(@as(u64, 1), m.cycles);
+}
+
+test "5.10 gen: port becomes 0 after high phase" {
+    const parsed = try Parser.parse(std.testing.allocator, "gen p0 2 3");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step(); // mov 100 p0
+    try m.step(); // slp 2 (instruction cycle)
+    try m.step(); // sleep tick
+    try m.step(); // sleep tick
+    try m.step(); // mov 0 p0
+    try std.testing.expectEqual(@as(i32, 0), m.cpu.ports[0]);
+    try std.testing.expectEqual(@as(u64, 5), m.cycles);
 }

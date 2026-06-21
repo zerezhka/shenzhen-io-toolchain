@@ -57,17 +57,59 @@ pub fn build(allocator: std.mem.Allocator, parsed: Parser.Program) !Program {
 
         // встретили инструкцию: надо предекодить её операнды и положить в массив.
         .instruction => |instr| {
-            // отдельный накопитель под операнды ЭТОЙ инструкции
-            var ops = std.ArrayList(Operand).empty;
-            for (instr.operands) |raw| {
-                try ops.append(allocator, decodeOperand(raw));
+            if (instr.op == .gen) {
+                // gen P X Y → mov 100 P / slp X / mov 0 P / slp Y
+                const port = decodeOperand(instr.operands[0]);
+                const x = decodeOperand(instr.operands[1]);
+                const y = decodeOperand(instr.operands[2]);
+
+                // mov 100 P
+                var ops1 = std.ArrayList(Operand).empty;
+                try ops1.append(allocator, Operand{ .imm = 100 });
+                try ops1.append(allocator, port);
+                try instructions.append(allocator, ExecInstruction{
+                    .op = .mov,
+                    .condition = instr.condition,
+                    .operands = try ops1.toOwnedSlice(allocator),
+                });
+                // slp X
+                var ops2 = std.ArrayList(Operand).empty;
+                try ops2.append(allocator, x);
+                try instructions.append(allocator, ExecInstruction{
+                    .op = .slp,
+                    .condition = instr.condition,
+                    .operands = try ops2.toOwnedSlice(allocator),
+                });
+                // mov 0 P
+                var ops3 = std.ArrayList(Operand).empty;
+                try ops3.append(allocator, Operand{ .imm = 0 });
+                try ops3.append(allocator, port);
+                try instructions.append(allocator, ExecInstruction{
+                    .op = .mov,
+                    .condition = instr.condition,
+                    .operands = try ops3.toOwnedSlice(allocator),
+                });
+                // slp Y
+                var ops4 = std.ArrayList(Operand).empty;
+                try ops4.append(allocator, y);
+                try instructions.append(allocator, ExecInstruction{
+                    .op = .slp,
+                    .condition = instr.condition,
+                    .operands = try ops4.toOwnedSlice(allocator),
+                });
+            } else {
+                // отдельный накопитель под операнды ЭТОЙ инструкции
+                var ops = std.ArrayList(Operand).empty;
+                for (instr.operands) |raw| {
+                    try ops.append(allocator, decodeOperand(raw));
+                }
+                // собираем готовую инструкцию и кладём в общий массив
+                try instructions.append(allocator, ExecInstruction{
+                    .op = instr.op,
+                    .condition = instr.condition,
+                    .operands = try ops.toOwnedSlice(allocator),
+                });
             }
-            // собираем готовую инструкцию и кладём в общий массив
-            try instructions.append(allocator, ExecInstruction{
-                .op = instr.op,
-                .condition = instr.condition,
-                .operands = try ops.toOwnedSlice(allocator),
-            });
         },
     };
 
