@@ -23,6 +23,18 @@ pub const Machine = struct {
 
         const instr = self.program.instructions[self.cpu.pc];
 
+        if (instr.condition) |cond| {
+            const skip = switch (cond) {
+                .positive => !self.cpu.conditional_positive or self.cpu.conditional_equal,
+                .negative => self.cpu.conditional_positive or self.cpu.conditional_equal,
+            };
+            if (skip) {
+                self.cpu.pc += 1;
+                self.cycles += 1;
+                return;
+            }
+        }
+
         switch (instr.op) {
             .nop => {},
             .mov => {
@@ -65,6 +77,54 @@ pub const Machine = struct {
                     self.cpu.setAcc(100);
                 } else {
                     self.cpu.setAcc(0);
+                }
+            },
+            // conditional
+            .teq => {
+                const op1 = try CpuModule.read(&self.cpu, instr.operands[0]);
+                const op2 = try CpuModule.read(&self.cpu, instr.operands[1]);
+                if (op1 == op2) {
+                    self.cpu.conditional_positive = true;
+                    self.cpu.conditional_equal = false;
+                } else {
+                    self.cpu.conditional_positive = false;
+                    self.cpu.conditional_equal = false;
+                }
+            },
+            .tgt => {
+                const op1 = try CpuModule.read(&self.cpu, instr.operands[0]);
+                const op2 = try CpuModule.read(&self.cpu, instr.operands[1]);
+                if (op1 > op2) {
+                    self.cpu.conditional_positive = true;
+                    self.cpu.conditional_equal = false;
+                } else {
+                    self.cpu.conditional_positive = false;
+                    self.cpu.conditional_equal = false;
+                }
+            },
+            .tlt => {
+                const op1 = try CpuModule.read(&self.cpu, instr.operands[0]);
+                const op2 = try CpuModule.read(&self.cpu, instr.operands[1]);
+                if (op1 < op2) {
+                    self.cpu.conditional_positive = true;
+                    self.cpu.conditional_equal = false;
+                } else {
+                    self.cpu.conditional_positive = false;
+                    self.cpu.conditional_equal = false;
+                }
+            },
+            .tcp => {
+                const op1 = try CpuModule.read(&self.cpu, instr.operands[0]);
+                const op2 = try CpuModule.read(&self.cpu, instr.operands[1]);
+                if (op1 > op2) {
+                    self.cpu.conditional_positive = true;
+                    self.cpu.conditional_equal = false;
+                } else if (op2 > op1) {
+                    self.cpu.conditional_positive = false;
+                    self.cpu.conditional_equal = false;
+                } else {
+                    self.cpu.conditional_positive = false;
+                    self.cpu.conditional_equal = true;
                 }
             },
             else => {
@@ -272,6 +332,129 @@ test "5.5 dst: set tens digit" {
     try m.step();
     try m.step();
     try std.testing.expectEqual(@as(i32, 170), m.cpu.acc);
+}
+
+// --- Step 5.6: test instructions & conditional execution ---
+
+test "5.6 teq: equal sets positive" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 5 acc\nteq acc 5\n+ mov 1 dat\n- mov 2 dat");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, true);
+    try m.step(); // mov 5 acc
+    try m.step(); // teq acc 5 → equal → positive=true
+    try m.step(); // + mov 1 dat → executes
+    try m.step(); // - mov 2 dat → skipped
+    try std.testing.expectEqual(@as(i32, 1), m.cpu.dat.?);
+}
+
+test "5.6 teq: not equal sets negative" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 3 acc\nteq acc 5\n+ mov 1 dat\n- mov 2 dat");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, true);
+    try m.step(); // mov 3 acc
+    try m.step(); // teq acc 5 → not equal → positive=false
+    try m.step(); // + mov 1 dat → skipped
+    try m.step(); // - mov 2 dat → executes
+    try std.testing.expectEqual(@as(i32, 2), m.cpu.dat.?);
+}
+
+test "5.6 tgt: greater sets positive" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 10 acc\ntgt acc 5\n+ mov 1 dat");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, true);
+    try m.step(); // mov 10 acc
+    try m.step(); // tgt acc 5 → 10 > 5 → positive=true
+    try m.step(); // + mov 1 dat → executes
+    try std.testing.expectEqual(@as(i32, 1), m.cpu.dat.?);
+}
+
+test "5.6 tlt: less sets positive" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 3 acc\ntlt acc 5\n+ mov 1 dat");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, true);
+    try m.step(); // mov 3 acc
+    try m.step(); // tlt acc 5 → 3 < 5 → positive=true
+    try m.step(); // + mov 1 dat → executes
+    try std.testing.expectEqual(@as(i32, 1), m.cpu.dat.?);
+}
+
+test "5.6 tcp: three-way compare" {
+    // A > B → positive
+    const parsed1 = try Parser.parse(std.testing.allocator, "mov 10 acc\ntcp acc 5\n+ mov 1 dat\n- mov 2 dat");
+    defer parsed1.deinit(std.testing.allocator);
+    var prog1 = try Simulator.build(std.testing.allocator, parsed1);
+    defer prog1.deinit(std.testing.allocator);
+
+    var m1 = Machine.init(prog1, true);
+    try m1.step();
+    try m1.step();
+    try m1.step(); // + mov 1 dat → executes
+    try m1.step(); // - mov 2 dat → skipped
+    try std.testing.expectEqual(@as(i32, 1), m1.cpu.dat.?);
+
+    // A < B → negative
+    const parsed2 = try Parser.parse(std.testing.allocator, "mov 3 acc\ntcp acc 5\n+ mov 1 dat\n- mov 2 dat");
+    defer parsed2.deinit(std.testing.allocator);
+    var prog2 = try Simulator.build(std.testing.allocator, parsed2);
+    defer prog2.deinit(std.testing.allocator);
+
+    var m2 = Machine.init(prog2, true);
+    try m2.step();
+    try m2.step();
+    try m2.step(); // + mov 1 dat → skipped
+    try m2.step(); // - mov 2 dat → executes
+    try std.testing.expectEqual(@as(i32, 2), m2.cpu.dat.?);
+
+    // A == B → equal (both skipped)
+    const parsed3 = try Parser.parse(std.testing.allocator, "mov 5 acc\ntcp acc 5\n+ mov 1 dat\n- mov 2 dat");
+    defer parsed3.deinit(std.testing.allocator);
+    var prog3 = try Simulator.build(std.testing.allocator, parsed3);
+    defer prog3.deinit(std.testing.allocator);
+
+    var m3 = Machine.init(prog3, true);
+    try m3.step();
+    try m3.step();
+    try m3.step(); // + mov 1 dat → skipped
+    try m3.step(); // - mov 2 dat → skipped
+    try std.testing.expectEqual(@as(i32, 0), m3.cpu.dat.?); // dat untouched (init=0)
+}
+
+test "5.6 unconditional instructions always execute regardless of flags" {
+    const parsed = try Parser.parse(std.testing.allocator, "teq 0 1\nmov 42 acc");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step(); // teq 0 1 → positive=false
+    try m.step(); // mov 42 acc → no condition, always runs
+    try std.testing.expectEqual(@as(i32, 42), m.cpu.acc);
+}
+
+test "5.6 skipped instruction still advances PC and costs a cycle" {
+    const parsed = try Parser.parse(std.testing.allocator, "teq 0 1\n+ mov 42 acc\nmov 99 acc");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step(); // teq 0 1 → positive=false
+    try m.step(); // + mov 42 acc → skipped, but PC still advances
+    try m.step(); // mov 99 acc → executes
+    try std.testing.expectEqual(@as(i32, 99), m.cpu.acc);
+    try std.testing.expectEqual(@as(u64, 3), m.cycles);
 }
 
 test "5.4 jmp loop executes repeatedly" {
