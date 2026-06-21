@@ -102,4 +102,5 @@ test {
     _ = @import("emit/Emitter.zig");
     _ = @import("preprocessor/ExtensionPreprocessor.zig");
     _ = @import("simulate/Simulator.zig");
+    _ = @import("simulate/Machine.zig");
 }
