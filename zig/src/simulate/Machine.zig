@@ -21,6 +21,12 @@ pub const Machine = struct {
     pub fn step(self: *Machine) !void {
         if (self.cpu.pc >= self.program.instructions.len) return;
 
+        if (self.sleep_remaining > 0) {
+            self.cycles += 1;
+            self.sleep_remaining -= 1;
+            return;
+        }
+
         const instr = self.program.instructions[self.cpu.pc];
 
         if (instr.condition) |cond| {
@@ -127,6 +133,10 @@ pub const Machine = struct {
                     self.cpu.conditional_equal = true;
                 }
             },
+            .slp => {
+                const tts = try CpuModule.read(&self.cpu, instr.operands[0]);
+                self.sleep_remaining = @intCast(tts);
+            },
             else => {
                 return error.NotYetImplemented;
             },
@@ -134,6 +144,11 @@ pub const Machine = struct {
 
         self.cpu.pc += 1;
         self.cycles += 1;
+    }
+    pub fn run(self: *Machine, limit: u64) !void {
+        while (self.cycles < limit and (self.cpu.pc < self.program.instructions.len or self.sleep_remaining > 0)) {
+            try self.step();
+        }
     }
 };
 
@@ -455,6 +470,80 @@ test "5.6 skipped instruction still advances PC and costs a cycle" {
     try m.step(); // mov 99 acc → executes
     try std.testing.expectEqual(@as(i32, 99), m.cpu.acc);
     try std.testing.expectEqual(@as(u64, 3), m.cycles);
+}
+
+// --- Step 5.7: slp & run ---
+
+test "5.7 slp: sleeps for N cycles" {
+    const parsed = try Parser.parse(std.testing.allocator, "slp 3\nnop");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step(); // slp 3: costs 1 cycle, sets sleep_remaining=3
+    try std.testing.expectEqual(@as(u64, 1), m.cycles);
+    try std.testing.expectEqual(@as(u32, 3), m.sleep_remaining);
+    try std.testing.expectEqual(@as(usize, 1), m.cpu.pc);
+
+    try m.step(); // sleeping: cycle 2, remaining=2
+    try m.step(); // sleeping: cycle 3, remaining=1
+    try m.step(); // sleeping: cycle 4, remaining=0
+    try std.testing.expectEqual(@as(u64, 4), m.cycles);
+    try std.testing.expectEqual(@as(u32, 0), m.sleep_remaining);
+    try std.testing.expectEqual(@as(usize, 1), m.cpu.pc); // PC didn't move during sleep
+
+    try m.step(); // nop: cycle 5
+    try std.testing.expectEqual(@as(u64, 5), m.cycles);
+    try std.testing.expectEqual(@as(usize, 2), m.cpu.pc);
+}
+
+test "5.7 slp 0: costs 1 cycle, no extra sleep" {
+    const parsed = try Parser.parse(std.testing.allocator, "slp 0\nnop");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step(); // slp 0: 1 cycle, sleep_remaining stays 0
+    try std.testing.expectEqual(@as(u64, 1), m.cycles);
+    try std.testing.expectEqual(@as(u32, 0), m.sleep_remaining);
+    try m.step(); // nop
+    try std.testing.expectEqual(@as(u64, 2), m.cycles);
+}
+
+test "5.7 run: executes until end of program" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 1 acc\nadd 2\nadd 3");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.run(1000);
+    try std.testing.expectEqual(@as(i32, 6), m.cpu.acc);
+    try std.testing.expectEqual(@as(u64, 3), m.cycles);
+}
+
+test "5.7 run: stops at cycle limit" {
+    const parsed = try Parser.parse(std.testing.allocator, "loop:\nnop\njmp loop");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.run(10);
+    try std.testing.expectEqual(@as(u64, 10), m.cycles);
+}
+
+test "5.7 run: slp counts toward cycle limit" {
+    const parsed = try Parser.parse(std.testing.allocator, "slp 5\nnop");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.run(1000);
+    try std.testing.expectEqual(@as(u64, 7), m.cycles); // 1 (slp) + 5 (sleep) + 1 (nop)
 }
 
 test "5.4 jmp loop executes repeatedly" {
