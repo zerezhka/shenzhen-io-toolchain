@@ -34,6 +34,39 @@ pub const Machine = struct {
                 self.cycles += 1;
                 return;
             },
+            // arithmetics
+            .add => {
+                const val = try CpuModule.read(&self.cpu, instr.operands[0]);
+                self.cpu.setAcc(self.cpu.acc + val);
+            },
+            .sub => {
+                const val = try CpuModule.read(&self.cpu, instr.operands[0]);
+                self.cpu.setAcc(self.cpu.acc - val);
+            },
+            .mul => {
+                const val = try CpuModule.read(&self.cpu, instr.operands[0]);
+                self.cpu.setAcc(self.cpu.acc * val);
+            },
+            .dgt => {
+                const pos = try CpuModule.read(&self.cpu, instr.operands[0]);
+                const divisor = std.math.powi(i32, 10, pos) catch 1;
+                const digit = @mod(@divTrunc(self.cpu.acc, divisor), 10);
+                try CpuModule.write(&self.cpu, instr.operands[1], digit);
+            },
+            .dst => {
+                const pos = try CpuModule.read(&self.cpu, instr.operands[0]);
+                const val = try CpuModule.read(&self.cpu, instr.operands[1]);
+                const divisor = std.math.powi(i32, 10, pos) catch 1;
+                const old_digit = @mod(@divTrunc(self.cpu.acc, divisor), 10);
+                self.cpu.setAcc(self.cpu.acc - old_digit * divisor + val * divisor);
+            },
+            .not => {
+                if (self.cpu.acc == 0) {
+                    self.cpu.setAcc(100);
+                } else {
+                    self.cpu.setAcc(0);
+                }
+            },
             else => {
                 return error.NotYetImplemented;
             },
@@ -110,6 +143,135 @@ test "5.4 jmp sets PC to target" {
     try std.testing.expectEqual(@as(u64, 1), m.cycles);
     try m.step(); // mov 42 acc
     try std.testing.expectEqual(@as(i32, 42), m.cpu.acc);
+}
+
+// --- Step 5.5: arithmetic ---
+
+test "5.5 add: acc += operand" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 10 acc\nadd 5");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 15), m.cpu.acc);
+}
+
+test "5.5 add: clamps at 999" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 990 acc\nadd 100");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 999), m.cpu.acc);
+}
+
+test "5.5 sub: acc -= operand" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 10 acc\nsub 3");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 7), m.cpu.acc);
+}
+
+test "5.5 sub: clamps at -999" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov -990 acc\nsub 100");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, -999), m.cpu.acc);
+}
+
+test "5.5 mul: acc *= operand" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 7 acc\nmul 6");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 42), m.cpu.acc);
+}
+
+test "5.5 not: zero becomes 100, nonzero becomes 0" {
+    const parsed = try Parser.parse(std.testing.allocator, "not\nmov 42 acc\nnot");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step(); // acc=0 → acc=100
+    try std.testing.expectEqual(@as(i32, 100), m.cpu.acc);
+    try m.step(); // mov 42 acc
+    try m.step(); // acc=42 → acc=0
+    try std.testing.expectEqual(@as(i32, 0), m.cpu.acc);
+}
+
+test "5.5 dgt: extract digit from acc" {
+    // acc=123, dgt 0 acc → ones digit = 3
+    // acc=123, dgt 1 acc → tens digit = 2
+    // acc=123, dgt 2 acc → hundreds digit = 1
+    const parsed = try Parser.parse(std.testing.allocator, "mov 123 acc\ndgt 0 dat");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, true);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 3), m.cpu.dat.?);
+}
+
+test "5.5 dgt: tens digit" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 456 acc\ndgt 1 dat");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, true);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 5), m.cpu.dat.?);
+}
+
+test "5.5 dst: set digit in acc" {
+    // acc=100, dst 0 5 → acc=105
+    const parsed = try Parser.parse(std.testing.allocator, "mov 100 acc\ndst 0 5");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 105), m.cpu.acc);
+}
+
+test "5.5 dst: set tens digit" {
+    // acc=100, dst 1 7 → acc=170
+    const parsed = try Parser.parse(std.testing.allocator, "mov 100 acc\ndst 1 7");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try m.step();
+    try m.step();
+    try std.testing.expectEqual(@as(i32, 170), m.cpu.acc);
 }
 
 test "5.4 jmp loop executes repeatedly" {
