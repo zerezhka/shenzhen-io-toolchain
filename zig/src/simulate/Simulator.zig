@@ -1,130 +1,11 @@
 const std = @import("std");
 const Parser = @import("../parse/Parser.zig");
-
-/// Регистры/счётчик/флаги одного MCU.
-/// Зеркалит Sio.Simulator.Cpu.CpuState из C#.
-pub const Cpu = struct {
-    acc: i32 = 0,
-    /// dat есть только на MC6000. null => регистра нет (MC4000).
-    dat: ?i32 = null,
-    pc: usize = 0,
-
-    /// Состояние условного исполнения:
-    /// true  => включены инструкции с префиксом '+',
-    /// false => включены инструкции с префиксом '-'.
-    /// Изначально false.
-    conditional_positive: bool = false,
-    /// После tcp при равенстве — выключены и '+', и '-'.
-    conditional_equal: bool = false,
-
-    pub fn init(has_dat: bool) Cpu {
-        if (has_dat) {
-            return Cpu{
-                .dat = 0,
-            };
-        } else {
-            return Cpu{};
-        }
-    }
-
-    /// Регистры зажаты в диапазон [-999, 999].
-    pub fn clamp(value: i32) i32 {
-        if (value < -999)
-            return -999
-        else if (value > 999)
-            return 999
-        else
-            return value;
-    }
-
-    pub fn setAcc(self: *Cpu, value: i32) void {
-        self.acc = clamp(value);
-    }
-
-    pub fn setDat(self: *Cpu, value: i32) !void {
-        if (self.dat != null) {
-            self.dat = clamp(value);
-        } else {
-            return error.DatNotAvailable;
-        }
-    }
-};
-
-/// Предекодированный операнд. Вместо того чтобы на каждом цикле парсить
-/// строку (как C# Decoder.ResolveOperand), разбираем один раз при build.
-/// Метку держим как имя — резолвим в PC на исполнении через Program.labels
-/// (иначе forward-прыжки требовали бы второго прохода).
-pub const Operand = union(enum) {
-    imm: i32,
-    acc,
-    dat,
-    nul, // ключевое слово `null` — читается как 0, запись игнорируется
-    port: u8, // p0..pN  (x-порты/xbus добавим на шаге портов)
-    label: []const u8,
-};
-
-/// Разбирает текст операнда в Operand.
-/// Порядок проверок: число -> acc/dat/null -> pN -> иначе метка.
-/// Immediate сразу зажимаем в [-999, 999] (как ClampValue в C#).
-pub fn decodeOperand(text: []const u8) Operand {
-    // число -> .imm (parseInt возвращает error-union: ловим, при провале идём дальше)
-    if (std.fmt.parseInt(i32, text, 10)) |n| {
-        return Operand{ .imm = Cpu.clamp(n) };
-    } else |_| {}
-
-    // ключевые слова
-    if (std.mem.eql(u8, text, "acc")) return .acc;
-    if (std.mem.eql(u8, text, "dat")) return .dat;
-    if (std.mem.eql(u8, text, "null")) return .nul;
-
-    // порт pN
-    if (text.len >= 2 and text[0] == 'p') {
-        if (std.fmt.parseInt(u8, text[1..], 10)) |idx| {
-            return Operand{ .port = idx };
-        } else |_| {}
-    }
-
-    // иначе — имя метки
-    return Operand{ .label = text };
-}
-
-/// Ошибки чтения операнда.
-pub const ReadError = error{
-    /// dat есть только на MC6000 (cpu.dat == null на MC4000).
-    DatNotAvailable,
-    /// Порты — шаг 5.9; метки как читаемые значения — решится в 5.3.
-    NotYetImplemented,
-};
-
-/// ШАГ 5.1 (тело пишешь ты): значение операнда при чтении.
-/// Аналог `Decoder.ResolveOperand` из C#, но без парсинга строк — вид
-/// операнда уже известен после предекода:
-///   .imm   → само значение (зажато ещё в decodeOperand),
-///   .acc   → cpu.acc,
-///   .dat   → регистр, а на MC4000 (dat == null) → error.DatNotAvailable,
-///   .nul   → 0 (чтение `null` всегда даёт ноль),
-///   .port / .label → error.NotYetImplemented (шаги 5.9 / 5.3).
-pub fn read(cpu: *const Cpu, operand: Operand) ReadError!i32 {
-    return switch (operand) {
-        .imm => |val| val,
-        .acc => cpu.acc,
-        .dat => if (cpu.dat) |val| val else error.DatNotAvailable,
-        .nul => 0,
-
-        // 5.3, 5.9, future changes
-        .label => error.NotYetImplemented,
-        .port => error.NotYetImplemented
-    };
-}
-
-pub fn write(cpu: *Cpu, operand: Operand, value: i32) !void {
-    return switch (operand) {
-        .acc => { cpu.setAcc(value); },
-        .dat => try cpu.setDat(value),
-        .nul => {},
-        .imm, .label, .port => error.NotYetImplemented,
-    };
-} 
+const CpuModule = @import("Cpu.zig");
+pub const Cpu = CpuModule.Cpu;
+pub const Operand = CpuModule.Operand;
+pub const decodeOperand = CpuModule.decodeOperand;
+pub const read = CpuModule.read;
+pub const write = CpuModule.write;
 
 /// Одна исполняемая инструкция: метки уже разложены в `Program.labels`,
 /// операнды предекодированы.
@@ -144,6 +25,7 @@ pub const Program = struct {
         for (self.instructions) |value| {
             allocator.free(value.operands);
         }
+        // TODO: ownership — labels are borrowed from parsed, not owned
         // for (self.labels) |label| {
         //     allocator.free(label);
         // }
@@ -198,22 +80,11 @@ test "build flattens labels out of the instruction stream" {
     try std.testing.expectEqual(Parser.Mnemonic.jmp, program.instructions[1].op);
     try std.testing.expectEqual(@as(usize, 0), program.labels.get("loop").?);
 
-    // operands предекодированы: "1" -> .imm, "loop" -> .label
+    // operands предекодированы: "1" -> .imm, "loop" -> .target (resolved)
     try std.testing.expect(program.instructions[0].operands[0] == .imm);
     try std.testing.expectEqual(@as(i32, 1), program.instructions[0].operands[0].imm);
-    try std.testing.expect(program.instructions[1].operands[0] == .label);
-    try std.testing.expectEqualStrings("loop", program.instructions[1].operands[0].label);
-}
-
-test "decodeOperand classifies each operand kind" {
-    try std.testing.expectEqual(@as(i32, 42), decodeOperand("42").imm);
-    try std.testing.expectEqual(@as(i32, -7), decodeOperand("-7").imm);
-    try std.testing.expectEqual(@as(i32, 999), decodeOperand("1500").imm); // зажат
-    try std.testing.expect(decodeOperand("acc") == .acc);
-    try std.testing.expect(decodeOperand("dat") == .dat);
-    try std.testing.expect(decodeOperand("null") == .nul);
-    try std.testing.expectEqual(@as(u8, 3), decodeOperand("p3").port);
-    try std.testing.expect(decodeOperand("loop") == .label);
+    try std.testing.expect(program.instructions[1].operands[0] == .target);
+    try std.testing.expectEqual(@as(usize, 0), program.instructions[1].operands[0].target);
 }
 
 test "label at end maps to one-past-last index" {
@@ -227,90 +98,47 @@ test "label at end maps to one-past-last index" {
     try std.testing.expectEqual(@as(usize, 1), program.labels.get("done").?);
 }
 
-// --- Шаг 5.1: тесты-задание. Сделай read() так, чтобы всё позеленело. ---
+// --- Шаг 5.3: label → target resolution в build() ---
 
-test "5.1 read: immediate returns its value" {
-    const cpu = Cpu.init(false);
-    try std.testing.expectEqual(@as(i32, 42), try read(&cpu, .{ .imm = 42 }));
-    try std.testing.expectEqual(@as(i32, -7), try read(&cpu, .{ .imm = -7 }));
+test "5.3 build resolves label to target index" {
+    const parsed = try Parser.parse(std.testing.allocator, "loop:\nnop\njmp loop");
+    defer parsed.deinit(std.testing.allocator);
+
+    var program = try build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    // jmp loop → .target = 0 (loop: points at instruction 0)
+    try std.testing.expect(program.instructions[1].operands[0] == .target);
+    try std.testing.expectEqual(@as(usize, 0), program.instructions[1].operands[0].target);
 }
 
-test "5.1 read: acc returns register value" {
-    var cpu = Cpu.init(false);
-    cpu.setAcc(123);
-    try std.testing.expectEqual(@as(i32, 123), try read(&cpu, .acc));
+test "5.3 build resolves forward jump" {
+    const parsed = try Parser.parse(std.testing.allocator, "jmp end\nnop\nend:");
+    defer parsed.deinit(std.testing.allocator);
+
+    var program = try build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    // jmp end → .target = 2 (end: is past last instruction)
+    try std.testing.expect(program.instructions[0].operands[0] == .target);
+    try std.testing.expectEqual(@as(usize, 2), program.instructions[0].operands[0].target);
 }
 
-test "5.1 read: dat on MC6000 returns register value" {
-    var cpu = Cpu.init(true);
-    try cpu.setDat(-55);
-    try std.testing.expectEqual(@as(i32, -55), try read(&cpu, .dat));
+test "5.3 build errors on unknown label" {
+    const parsed = try Parser.parse(std.testing.allocator, "jmp nowhere");
+    defer parsed.deinit(std.testing.allocator);
+
+    const result = build(std.testing.allocator, parsed);
+    try std.testing.expectError(error.UnknownLabel, result);
 }
 
-test "5.1 read: dat on MC4000 is an error" {
-    const cpu = Cpu.init(false);
-    try std.testing.expectError(error.DatNotAvailable, read(&cpu, .dat));
-}
+test "5.3 non-label operands are untouched" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 42 acc");
+    defer parsed.deinit(std.testing.allocator);
 
-test "5.1 read: null reads as zero" {
-    var cpu = Cpu.init(false);
-    cpu.setAcc(999); // чтение null не должно зависеть от состояния cpu
-    try std.testing.expectEqual(@as(i32, 0), try read(&cpu, .nul));
-}
+    var program = try build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
 
-test "5.1 read: ports and labels are not implemented yet" {
-    const cpu = Cpu.init(false);
-    try std.testing.expectError(error.NotYetImplemented, read(&cpu, .{ .port = 0 }));
-    try std.testing.expectError(error.NotYetImplemented, read(&cpu, .{ .label = "loop" }));
-}
-
-// --- Шаг 5.2: тесты-задание. write() написана, вот и проверяем. ---
-
-test "5.2 write: acc writes to register" {
-    var cpu = Cpu.init(false);
-    try write(&cpu, .acc, 42);
-    try std.testing.expectEqual(@as(i32, 42), cpu.acc);
-    try write(&cpu, .acc, -7);
-    try std.testing.expectEqual(@as(i32, -7), cpu.acc);
-}
-
-test "5.2 write: dat on MC6000 writes to register" {
-    var cpu = Cpu.init(true);
-    try write(&cpu, .dat, 55);
-    try std.testing.expectEqual(@as(i32, 55), cpu.dat.?);
-    try write(&cpu, .dat, -99);
-    try std.testing.expectEqual(@as(i32, -99), cpu.dat.?);
-}
-
-test "5.2 write: dat on MC4000 is an error" {
-    var cpu = Cpu.init(false);
-    try std.testing.expectError(error.DatNotAvailable, write(&cpu, .dat, 42));
-}
-
-test "5.2 write: null discards value silently" {
-    var cpu = Cpu.init(false);
-    cpu.setAcc(100);
-    try write(&cpu, .nul, 42); // write to null does nothing
-    try std.testing.expectEqual(@as(i32, 100), cpu.acc); // acc unchanged
-}
-
-test "5.2 write: imm/label/port are not lvalues" {
-    var cpu = Cpu.init(false);
-    try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .imm = 0 }, 42));
-    try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .label = "loop" }, 42));
-    try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .port = 0 }, 42));
-}
-
-test "5.2 write: acc clamps values" {
-    var cpu = Cpu.init(false);
-    try write(&cpu, .acc, 1500); // over cap
-    try std.testing.expectEqual(@as(i32, 999), cpu.acc);
-    try write(&cpu, .acc, -2000); // under cap
-    try std.testing.expectEqual(@as(i32, -999), cpu.acc);
-}
-
-test "cpu clamps registers" {
-    try std.testing.expectEqual(@as(i32, 999), Cpu.clamp(1500));
-    try std.testing.expectEqual(@as(i32, -999), Cpu.clamp(-1500));
-    try std.testing.expectEqual(@as(i32, 42), Cpu.clamp(42));
+    try std.testing.expect(program.instructions[0].operands[0] == .imm);
+    try std.testing.expect(program.instructions[0].operands[1] == .acc);
 }
