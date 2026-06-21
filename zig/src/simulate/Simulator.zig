@@ -38,23 +38,32 @@ pub const Program = struct {
 /// Метки выкидываются из потока инструкций и мапятся на индекс следующей.
 pub fn build(allocator: std.mem.Allocator, parsed: Parser.Program) !Program {
     var instructions = std.ArrayList(ExecInstruction).empty;
+    errdefer {
+        for (instructions.items) |value| {
+            allocator.free(value.operands);
+        }
+        instructions.deinit(allocator);
+    }
     var labels = std.StringHashMap(usize).init(allocator);
+    errdefer {
+        labels.deinit();
+    }
 
     for (parsed.statements) |stmt| switch (stmt) {
-    // встретили метку: запоминаем, на какой индекс она смотрит.
-    // instructions.items.len = сколько инструкций уже накопили =
-    //   = индекс СЛЕДУЮЩЕЙ, которую вот-вот добавим. Ровно туда метка и показывает.
-          .label => |name| try labels.put(name, instructions.items.len),
+        // встретили метку: запоминаем, на какой индекс она смотрит.
+        // instructions.items.len = сколько инструкций уже накопили =
+        //   = индекс СЛЕДУЮЩЕЙ, которую вот-вот добавим. Ровно туда метка и показывает.
+        .label => |name| try labels.put(name, instructions.items.len),
 
         // встретили инструкцию: надо предекодить её операнды и положить в массив.
-          .instruction => |instr| {
+        .instruction => |instr| {
             // отдельный накопитель под операнды ЭТОЙ инструкции
-              var ops = std.ArrayList(Operand).empty;
+            var ops = std.ArrayList(Operand).empty;
             for (instr.operands) |raw| {
                 try ops.append(allocator, decodeOperand(raw));
             }
             // собираем готовую инструкцию и кладём в общий массив
-              try instructions.append(allocator, ExecInstruction{
+            try instructions.append(allocator, ExecInstruction{
                 .op = instr.op,
                 .condition = instr.condition,
                 .operands = try ops.toOwnedSlice(allocator),
@@ -62,6 +71,19 @@ pub fn build(allocator: std.mem.Allocator, parsed: Parser.Program) !Program {
         },
     };
 
+    // label resolution
+    for (instructions.items) |*instr| {
+        for (instr.operands) |*op| {
+            if (op.* == .label) {
+                const name = op.label;
+                if (labels.get(name)) |pc| {
+                    op.* = Operand{ .target = pc };
+                } else {
+                    return error.UnknownLabel;
+                }
+            }
+        }
+    }
     return Program{
         .instructions = try instructions.toOwnedSlice(allocator),
         .labels = labels,
