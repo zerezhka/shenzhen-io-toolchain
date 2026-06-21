@@ -15,6 +15,7 @@ pub const Cpu = struct {
     conditional_positive: bool = false,
     /// После tcp при равенстве — выключены и '+', и '-'.
     conditional_equal: bool = false,
+    ports: [6]i32 = .{0} ** 6,
 
     pub fn init(has_dat: bool) Cpu {
         if (has_dat) {
@@ -90,6 +91,17 @@ pub const ReadError = error{
     NotYetImplemented,
 };
 
+/// Порты в диапазоне -..100
+    pub fn clampPort(value: i32) i32 {
+    if (value < 0) {
+        return 0;
+    } else if (value > 100) {
+        return 100;
+    } else {
+        return value;
+    }
+}
+
 /// Значение операнда при чтении.
 pub fn read(cpu: *const Cpu, operand: Operand) ReadError!i32 {
     return switch (operand) {
@@ -98,19 +110,24 @@ pub fn read(cpu: *const Cpu, operand: Operand) ReadError!i32 {
         .dat => if (cpu.dat) |val| val else error.DatNotAvailable,
         .nul => 0,
 
+        .port => |idx| cpu.ports[idx],
         .target => error.NotYetImplemented,
         .label => error.NotYetImplemented,
-        .port => error.NotYetImplemented,
     };
 }
 
 /// Запись значения в операнд.
 pub fn write(cpu: *Cpu, operand: Operand, value: i32) !void {
     return switch (operand) {
-        .acc => { cpu.setAcc(value); },
+        .acc => {
+            cpu.setAcc(value);
+        },
         .dat => try cpu.setDat(value),
         .nul => {},
-        .imm, .target, .label, .port => error.NotYetImplemented,
+        .port => |idx|{
+             cpu.ports[idx] = clampPort(value);
+        },
+        .imm, .target, .label, => error.NotYetImplemented,
     };
 }
 
@@ -162,9 +179,8 @@ test "5.1 read: null reads as zero" {
     try std.testing.expectEqual(@as(i32, 0), try read(&cpu, .nul));
 }
 
-test "5.1 read: ports and labels are not implemented yet" {
+test "5.1 read: labels are not implemented yet" {
     const cpu = Cpu.init(false);
-    try std.testing.expectError(error.NotYetImplemented, read(&cpu, .{ .port = 0 }));
     try std.testing.expectError(error.NotYetImplemented, read(&cpu, .{ .label = "loop" }));
 }
 
@@ -196,11 +212,10 @@ test "5.2 write: null discards value silently" {
     try std.testing.expectEqual(@as(i32, 100), cpu.acc);
 }
 
-test "5.2 write: imm/label/port are not lvalues" {
+test "5.2 write: imm/label are not lvalues" {
     var cpu = Cpu.init(false);
     try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .imm = 0 }, 42));
     try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .label = "loop" }, 42));
-    try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .port = 0 }, 42));
 }
 
 test "5.2 write: acc clamps values" {
@@ -209,4 +224,33 @@ test "5.2 write: acc clamps values" {
     try std.testing.expectEqual(@as(i32, 999), cpu.acc);
     try write(&cpu, .acc, -2000);
     try std.testing.expectEqual(@as(i32, -999), cpu.acc);
+}
+
+// --- Step 5.9: simple I/O ports ---
+
+test "5.9 read: port returns stored value" {
+    var cpu = Cpu.init(false);
+    cpu.ports[0] = 50;
+    cpu.ports[3] = 100;
+    try std.testing.expectEqual(@as(i32, 50), try read(&cpu, .{ .port = 0 }));
+    try std.testing.expectEqual(@as(i32, 100), try read(&cpu, .{ .port = 3 }));
+}
+
+test "5.9 read: port defaults to zero" {
+    const cpu = Cpu.init(false);
+    try std.testing.expectEqual(@as(i32, 0), try read(&cpu, .{ .port = 0 }));
+}
+
+test "5.9 write: port stores value" {
+    var cpu = Cpu.init(false);
+    try write(&cpu, .{ .port = 1 }, 75);
+    try std.testing.expectEqual(@as(i32, 75), cpu.ports[1]);
+}
+
+test "5.9 write: port clamps to 0-100" {
+    var cpu = Cpu.init(false);
+    try write(&cpu, .{ .port = 0 }, 200);
+    try std.testing.expectEqual(@as(i32, 100), cpu.ports[0]);
+    try write(&cpu, .{ .port = 0 }, -50);
+    try std.testing.expectEqual(@as(i32, 0), cpu.ports[0]);
 }
