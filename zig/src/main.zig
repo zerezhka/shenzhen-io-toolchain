@@ -59,11 +59,26 @@ pub fn main(init: std.process.Init) u8 {
 
     if (std.mem.eql(u8, cmd, "simulate")) {
         const path = args.next() orelse {
-            std.debug.print("usage: sio simulate <file> [--trace]\n", .{});
+            std.debug.print("usage: sio simulate <file> [--trace] [--cycles N]\n", .{});
             return 1;
         };
-        const trace = if (args.next()) |flag| std.mem.eql(u8, flag, "--trace") else false;
-        simulate(io, gpa, path, trace) catch |err| {
+        var trace = false;
+        var cycle_limit: u64 = 100_000;
+        while (args.next()) |flag| {
+            if (std.mem.eql(u8, flag, "--trace")) {
+                trace = true;
+            } else if (std.mem.eql(u8, flag, "--cycles")) {
+                const val = args.next() orelse {
+                    std.debug.print("--cycles requires a number\n", .{});
+                    return 1;
+                };
+                cycle_limit = std.fmt.parseInt(u64, val, 10) catch {
+                    std.debug.print("invalid --cycles value: {s}\n", .{val});
+                    return 1;
+                };
+            }
+        }
+        simulate(io, gpa, path, trace, cycle_limit) catch |err| {
             std.debug.print("error: {}\n", .{err});
             return 1;
         };
@@ -107,7 +122,7 @@ fn assemble(io: std.Io, gpa: std.mem.Allocator, path: []const u8) !void {
     try fw.interface.flush();
 }
 
-fn simulate(io: std.Io, gpa: std.mem.Allocator, path: []const u8, trace: bool) !void {
+fn simulate(io: std.Io, gpa: std.mem.Allocator, path: []const u8, trace: bool, cycle_limit: u64) !void {
     const source = try std.Io.Dir.cwd().readFileAlloc(io, path, gpa, std.Io.Limit.limited(1 << 20));
     defer gpa.free(source);
 
@@ -122,7 +137,7 @@ fn simulate(io: std.Io, gpa: std.mem.Allocator, path: []const u8, trace: bool) !
 
     var machine = Machine.Machine.init(program, true);
     machine.trace = trace;
-    try machine.run(100_000);
+    try machine.run(cycle_limit);
 
     const dat_val: i32 = if (machine.cpu.dat) |d| d else 0;
     try printStdout(io, "acc={d} dat={d} cycles={d} p0={d} p1={d} p2={d} p3={d} p4={d} p5={d}\n", .{
