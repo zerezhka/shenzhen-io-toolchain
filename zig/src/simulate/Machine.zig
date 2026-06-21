@@ -36,7 +36,6 @@ pub const Machine = struct {
             };
             if (skip) {
                 self.cpu.pc += 1;
-                self.cycles += 1;
                 return;
             }
         }
@@ -458,7 +457,7 @@ test "5.6 unconditional instructions always execute regardless of flags" {
     try std.testing.expectEqual(@as(i32, 42), m.cpu.acc);
 }
 
-test "5.6 skipped instruction still advances PC and costs a cycle" {
+test "5.6 skipped instruction advances PC but costs no cycle" {
     const parsed = try Parser.parse(std.testing.allocator, "teq 0 1\n+ mov 42 acc\nmov 99 acc");
     defer parsed.deinit(std.testing.allocator);
     var program = try Simulator.build(std.testing.allocator, parsed);
@@ -466,10 +465,10 @@ test "5.6 skipped instruction still advances PC and costs a cycle" {
 
     var m = Machine.init(program, false);
     try m.step(); // teq 0 1 → positive=false
-    try m.step(); // + mov 42 acc → skipped, but PC still advances
+    try m.step(); // + mov 42 acc → skipped, PC advances, no cycle
     try m.step(); // mov 99 acc → executes
     try std.testing.expectEqual(@as(i32, 99), m.cpu.acc);
-    try std.testing.expectEqual(@as(u64, 3), m.cycles);
+    try std.testing.expectEqual(@as(u64, 2), m.cycles);
 }
 
 // --- Step 5.7: slp & run ---
