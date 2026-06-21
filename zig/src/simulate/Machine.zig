@@ -8,6 +8,7 @@ pub const Machine = struct {
     program: Simulator.Program,
     cycles: u64,
     sleep_remaining: u32,
+    trace: bool = false,
 
     pub fn init(program: Simulator.Program, has_dat: bool) Machine {
         return .{
@@ -22,8 +23,9 @@ pub const Machine = struct {
         if (self.cpu.pc >= self.program.instructions.len) return;
 
         if (self.sleep_remaining > 0) {
-            self.cycles += 1;
             self.sleep_remaining -= 1;
+            self.cycles += 1;
+            if (self.trace) self.printTrace("slp", self.cpu.pc);
             return;
         }
 
@@ -47,8 +49,10 @@ pub const Machine = struct {
                 try CpuModule.write(&self.cpu, instr.operands[1], val);
             },
             .jmp => {
+                const from = self.cpu.pc;
                 self.cpu.pc = instr.operands[0].target;
                 self.cycles += 1;
+                if (self.trace) self.printTrace("jmp", from);
                 return;
             },
             // arithmetics
@@ -143,6 +147,14 @@ pub const Machine = struct {
 
         self.cpu.pc += 1;
         self.cycles += 1;
+        if (self.trace) self.printTrace(@tagName(instr.op), self.cpu.pc - 1);
+    }
+
+    fn printTrace(self: *const Machine, op: []const u8, pc: usize) void {
+        const dat_val: i32 = if (self.cpu.dat) |d| d else 0;
+        std.debug.print("cycle={d} pc={d} op={s} acc={d} dat={d}\n", .{
+            self.cycles, pc, op, self.cpu.acc, dat_val,
+        });
     }
     pub fn run(self: *Machine, limit: u64) !void {
         while (self.cycles < limit and (self.cpu.pc < self.program.instructions.len or self.sleep_remaining > 0)) {
