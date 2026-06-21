@@ -3,6 +3,8 @@ const options = @import("options");
 const Preprocessor = @import("preprocessor/ExtensionPreprocessor.zig");
 const Parser = @import("parse/Parser.zig");
 const Emitter = @import("emit/Emitter.zig");
+const Simulator = @import("simulate/Simulator.zig");
+const Machine = @import("simulate/Machine.zig");
 
 const version = options.version;
 
@@ -56,7 +58,14 @@ pub fn main(init: std.process.Init) u8 {
     }
 
     if (std.mem.eql(u8, cmd, "simulate")) {
-        std.debug.print("TODO: simulate not implemented yet\n", .{});
+        const path = args.next() orelse {
+            std.debug.print("usage: sio simulate <file>\n", .{});
+            return 1;
+        };
+        simulate(io, gpa, path) catch |err| {
+            std.debug.print("error: {}\n", .{err});
+            return 1;
+        };
         return 0;
     }
 
@@ -95,6 +104,26 @@ fn assemble(io: std.Io, gpa: std.mem.Allocator, path: []const u8) !void {
     var fw = std.Io.File.stdout().writer(io, &buf);
     try fw.interface.writeAll(out);
     try fw.interface.flush();
+}
+
+fn simulate(io: std.Io, gpa: std.mem.Allocator, path: []const u8) !void {
+    const source = try std.Io.Dir.cwd().readFileAlloc(io, path, gpa, std.Io.Limit.limited(1 << 20));
+    defer gpa.free(source);
+
+    const preprocessed = try Preprocessor.preprocess(gpa, source);
+    defer gpa.free(preprocessed);
+
+    const parsed = try Parser.parse(gpa, preprocessed);
+    defer parsed.deinit(gpa);
+
+    var program = try Simulator.build(gpa, parsed);
+    defer program.deinit(gpa);
+
+    var machine = Machine.Machine.init(program, true);
+    try machine.run(100_000);
+
+    const dat_val: i32 = if (machine.cpu.dat) |d| d else 0;
+    try printStdout(io, "acc={d} dat={d} cycles={d}\n", .{ machine.cpu.acc, dat_val, machine.cycles });
 }
 
 test {
