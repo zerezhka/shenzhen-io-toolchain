@@ -68,7 +68,7 @@ pub const Machine = struct {
                 const pos = try CpuModule.read(&self.cpu, instr.operands[0]);
                 const divisor = std.math.powi(i32, 10, pos) catch 1;
                 const digit = @mod(@divTrunc(self.cpu.acc, divisor), 10);
-                try CpuModule.write(&self.cpu, instr.operands[1], digit);
+                self.cpu.setAcc(digit);
             },
             .dst => {
                 const pos = try CpuModule.read(&self.cpu, instr.operands[0]);
@@ -296,30 +296,27 @@ test "5.5 not: zero becomes 100, nonzero becomes 0" {
 }
 
 test "5.5 dgt: extract digit from acc" {
-    // acc=123, dgt 0 acc → ones digit = 3
-    // acc=123, dgt 1 acc → tens digit = 2
-    // acc=123, dgt 2 acc → hundreds digit = 1
-    const parsed = try Parser.parse(std.testing.allocator, "mov 123 acc\ndgt 0 dat");
+    const parsed = try Parser.parse(std.testing.allocator, "mov 123 acc\ndgt 0");
     defer parsed.deinit(std.testing.allocator);
     var program = try Simulator.build(std.testing.allocator, parsed);
     defer program.deinit(std.testing.allocator);
 
-    var m = Machine.init(program, true);
+    var m = Machine.init(program, false);
     try m.step();
     try m.step();
-    try std.testing.expectEqual(@as(i32, 3), m.cpu.dat.?);
+    try std.testing.expectEqual(@as(i32, 3), m.cpu.acc);
 }
 
 test "5.5 dgt: tens digit" {
-    const parsed = try Parser.parse(std.testing.allocator, "mov 456 acc\ndgt 1 dat");
+    const parsed = try Parser.parse(std.testing.allocator, "mov 456 acc\ndgt 1");
     defer parsed.deinit(std.testing.allocator);
     var program = try Simulator.build(std.testing.allocator, parsed);
     defer program.deinit(std.testing.allocator);
 
-    var m = Machine.init(program, true);
+    var m = Machine.init(program, false);
     try m.step();
     try m.step();
-    try std.testing.expectEqual(@as(i32, 5), m.cpu.dat.?);
+    try std.testing.expectEqual(@as(i32, 5), m.cpu.acc);
 }
 
 test "5.5 dst: set digit in acc" {
