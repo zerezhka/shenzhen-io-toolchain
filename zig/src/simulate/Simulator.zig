@@ -105,10 +105,26 @@ pub const ReadError = error{
 ///   .nul   → 0 (чтение `null` всегда даёт ноль),
 ///   .port / .label → error.NotYetImplemented (шаги 5.9 / 5.3).
 pub fn read(cpu: *const Cpu, operand: Operand) ReadError!i32 {
-    _ = cpu;
-    _ = operand;
-    return error.NotYetImplemented; // TODO(5.1): замени на switch по operand
+    return switch (operand) {
+        .imm => |val| val,
+        .acc => cpu.acc,
+        .dat => if (cpu.dat) |val| val else error.DatNotAvailable,
+        .nul => 0,
+
+        // 5.3, 5.9, future changes
+        .label => error.NotYetImplemented,
+        .port => error.NotYetImplemented
+    };
 }
+
+pub fn write(cpu: *Cpu, operand: Operand, value: i32) !void {
+    return switch (operand) {
+        .acc => { cpu.setAcc(value); },
+        .dat => try cpu.setDat(value),
+        .nul => {},
+        .imm, .label, .port => error.NotYetImplemented,
+    };
+} 
 
 /// Одна исполняемая инструкция: метки уже разложены в `Program.labels`,
 /// операнды предекодированы.
@@ -246,6 +262,51 @@ test "5.1 read: ports and labels are not implemented yet" {
     const cpu = Cpu.init(false);
     try std.testing.expectError(error.NotYetImplemented, read(&cpu, .{ .port = 0 }));
     try std.testing.expectError(error.NotYetImplemented, read(&cpu, .{ .label = "loop" }));
+}
+
+// --- Шаг 5.2: тесты-задание. write() написана, вот и проверяем. ---
+
+test "5.2 write: acc writes to register" {
+    var cpu = Cpu.init(false);
+    try write(&cpu, .acc, 42);
+    try std.testing.expectEqual(@as(i32, 42), cpu.acc);
+    try write(&cpu, .acc, -7);
+    try std.testing.expectEqual(@as(i32, -7), cpu.acc);
+}
+
+test "5.2 write: dat on MC6000 writes to register" {
+    var cpu = Cpu.init(true);
+    try write(&cpu, .dat, 55);
+    try std.testing.expectEqual(@as(i32, 55), cpu.dat.?);
+    try write(&cpu, .dat, -99);
+    try std.testing.expectEqual(@as(i32, -99), cpu.dat.?);
+}
+
+test "5.2 write: dat on MC4000 is an error" {
+    var cpu = Cpu.init(false);
+    try std.testing.expectError(error.DatNotAvailable, write(&cpu, .dat, 42));
+}
+
+test "5.2 write: null discards value silently" {
+    var cpu = Cpu.init(false);
+    cpu.setAcc(100);
+    try write(&cpu, .nul, 42); // write to null does nothing
+    try std.testing.expectEqual(@as(i32, 100), cpu.acc); // acc unchanged
+}
+
+test "5.2 write: imm/label/port are not lvalues" {
+    var cpu = Cpu.init(false);
+    try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .imm = 0 }, 42));
+    try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .label = "loop" }, 42));
+    try std.testing.expectError(error.NotYetImplemented, write(&cpu, .{ .port = 0 }, 42));
+}
+
+test "5.2 write: acc clamps values" {
+    var cpu = Cpu.init(false);
+    try write(&cpu, .acc, 1500); // over cap
+    try std.testing.expectEqual(@as(i32, 999), cpu.acc);
+    try write(&cpu, .acc, -2000); // under cap
+    try std.testing.expectEqual(@as(i32, -999), cpu.acc);
 }
 
 test "cpu clamps registers" {
