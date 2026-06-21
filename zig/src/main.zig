@@ -125,7 +125,11 @@ fn simulate(io: std.Io, gpa: std.mem.Allocator, path: []const u8, trace: bool) !
     try machine.run(100_000);
 
     const dat_val: i32 = if (machine.cpu.dat) |d| d else 0;
-    try printStdout(io, "acc={d} dat={d} cycles={d}\n", .{ machine.cpu.acc, dat_val, machine.cycles });
+    try printStdout(io, "acc={d} dat={d} cycles={d} p0={d} p1={d} p2={d} p3={d} p4={d} p5={d}\n", .{
+        machine.cpu.acc, dat_val, machine.cycles,
+        machine.cpu.ports[0], machine.cpu.ports[1], machine.cpu.ports[2],
+        machine.cpu.ports[3], machine.cpu.ports[4], machine.cpu.ports[5],
+    });
 }
 
 test {

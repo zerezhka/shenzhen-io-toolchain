@@ -34,11 +34,17 @@ fi
 
 extract_cs_state() {
     local out="$1"
-    local acc dat cyc
+    local acc dat cyc p0 p1 p2 p3 p4 p5
     acc=$(echo "$out" | grep 'ACC:' | awk '{print $2}')
     dat=$(echo "$out" | grep 'DAT:' | awk '{print $2}')
     cyc=$(echo "$out" | grep 'Cycles:' | awk '{print $2}')
-    echo "acc=$acc dat=$dat cycles=$cyc"
+    p0=$(echo "$out" | grep 'p0:' | awk '{print $2}')
+    p1=$(echo "$out" | grep 'p1:' | awk '{print $2}')
+    p2=$(echo "$out" | grep 'p2:' | awk '{print $2}')
+    p3=$(echo "$out" | grep 'p3:' | awk '{print $2}')
+    p4=$(echo "$out" | grep 'p4:' | awk '{print $2}')
+    p5=$(echo "$out" | grep 'p5:' | awk '{print $2}')
+    echo "acc=$acc dat=$dat cycles=$cyc p0=$p0 p1=$p1 p2=$p2 p3=$p3 p4=$p4 p5=$p5"
 }
 
 # C# trace: "0:Instruction:mov 5 acc" → "mov"
