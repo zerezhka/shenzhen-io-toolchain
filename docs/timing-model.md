@@ -1,24 +1,43 @@
 # Timing Model: Shenzhen I/O Simulator
 
-**Version**: 1.0.0  
-**Date**: 2025-12-21  
+**Version**: 2.0.0  
+**Date**: 2026-07-02 (v1: 2025-12-21)  
 **Source**: Based on Shenzhen I/O manual and `src/Sio.Simulator/Isa/InstructionSetManifest.cs`
 
 ## Overview
 
-The simulator uses a **cycle-based timing model** where each instruction consumes cycles, and the CPU can sleep to advance time units.
+**Decision (2026-07-02): the Zig simulator matches the game's time semantics.**
+The synchronization quantum is the **time unit**, not the instruction. This
+supersedes the simplified v1 model below, which survives only in the legacy
+single-machine `Machine.step()` path (and the C# simulator) until step 6.1
+migration completes.
 
-## Time Units vs Cycles
+## Game-accurate model (Zig, step 6.x)
 
-According to the Shenzhen I/O manual:
+Per the Shenzhen I/O manual:
 - **Time units** are the fundamental unit of time in the game
-- CPUs can execute **many instructions within one time unit**
-- To advance to the next time unit, a CPU must use the `slp` instruction
+- CPUs execute **as many instructions as they can within one time unit**,
+  stopping only at `slp` (or a blocking XBus operation)
+- **Cycles** count executed instructions — a power/score metric, not a clock
 
-In our simulator:
-- **Cycles** are our internal unit (1 cycle per instruction, typically)
-- **Time units** are advanced via `slp` (1 time unit = multiple cycles)
-- For simplicity, we currently model: **1 instruction = 1 cycle**, and `slp N` advances N cycles
+Implementation (`zig/src/simulate/Machine.zig` + `Board.zig`):
+- `Machine.runSlice()` runs instructions back-to-back until `slp N` (yields
+  `.sleep = N`), end of program (`.halted`), or the `max_slice_instructions`
+  guard fires (`error.NeverSleeps` — a loop without `slp` never yields).
+- `Board` owns global `time`; one `Board.stepTimeUnit()` = one slice for every
+  awake machine, then `time += 1`. `slp N` ⇒ `wake_time = time + N`.
+- `cycles` += 1 per executed instruction. **Sleeping costs 0 cycles** (this
+  diverges from the v1 model, which charged 1 cycle per sleep tick).
+- Within a time unit, machines run in index order; wire writes are immediately
+  visible to later-indexed machines in the same time unit (deterministic
+  simplification of the game's "simultaneous" chips).
+- Unconnected pin (`pin_map` = null): reads 0, writes are discarded (game-like).
+
+## Legacy v1 model (C# and old `Machine.step()`)
+
+- **1 instruction = 1 cycle**, and `slp N` advances N cycles
+- Time units are not modeled separately; the instruction is the sync quantum
+- Kept for reference until single-chip code paths migrate to `runSlice`/`Board`
 
 ## Instruction Timing
 
@@ -45,11 +64,12 @@ All standard instructions consume **1 cycle**:
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Instruction cycle counting | ✅ Implemented | All instructions return cycle count |
-| `slp` timing | ✅ Implemented | Sleeps for specified cycles |
-| `slx` timing | ✅ Implemented | Waits for XBus data |
+| `slp` timing | ✅ Implemented (v1) | Game-accurate version: step 6.0 (`runSlice`) |
+| `slx` timing | ✅ C# only | Zig: step 6.3 (blocking XBus) |
 | Cycle limit enforcement | ✅ Implemented | `CycleController` enforces limits |
 | Deterministic execution | ✅ Implemented | Same inputs → same outputs |
-| Time unit modeling | ⚠️ Simplified | Currently 1 cycle = 1 instruction; may need refinement |
+| Time unit modeling | 🚧 In progress | Game-accurate `runSlice`/`Board`: steps 6.0–6.1, stubs + red tests in place |
+| Multi-MCU (shared wires) | 🚧 In progress | `Board` + `Wire`, step 6.1 |
 
 ## Power Consumption Model
 
@@ -76,6 +96,6 @@ This is achieved by:
 ## Future Enhancements
 
 Potential improvements to timing model:
-- More accurate time unit modeling (multiple instructions per time unit)
 - Instruction-specific cycle costs (if manual specifies different costs)
-- Multi-MCU synchronization (when multi-MCU support is added)
+- Event-driven fast-forward: when all machines are asleep, jump to
+  `min(wake_time)` instead of ticking every time unit (step 6.4)
