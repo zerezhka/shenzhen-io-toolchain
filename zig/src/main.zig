@@ -153,4 +153,5 @@ test {
     _ = @import("preprocessor/ExtensionPreprocessor.zig");
     _ = @import("simulate/Simulator.zig");
     _ = @import("simulate/Machine.zig");
+    _ = @import("simulate/Board.zig");
 }

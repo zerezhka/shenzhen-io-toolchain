@@ -2,6 +2,22 @@ const std = @import("std");
 const CpuModule = @import("Cpu.zig");
 const Simulator = @import("Simulator.zig");
 const Parser = @import("../parse/Parser.zig");
+const Board = @import("Board.zig");
+
+/// Чем закончился runSlice: почему машина отдала управление.
+/// 6.3: добавятся blocked_read/blocked_write для XBus.
+pub const Yield = union(enum) {
+    /// PC ушёл за конец программы — машина больше никогда не исполнится.
+    halted,
+    /// Исполнен slp N: машина хочет спать N time units.
+    /// wake_time выставляет Board (машина своего времени не знает).
+    sleep: u32,
+};
+
+/// Предохранитель: программа без slp (например `loop: jmp loop`) никогда
+/// не отдаст управление — внутри одного time unit это вечный цикл.
+/// Больше стольких инструкций за один slice → error.NeverSleeps.
+pub const max_slice_instructions: u64 = 100_000;
 
 pub const Machine = struct {
     cpu: CpuModule.Cpu,
@@ -9,6 +25,17 @@ pub const Machine = struct {
     cycles: u64,
     sleep_remaining: u32,
     trace: bool = false,
+
+    // --- Step 6.x: игровые time units + общие провода ---
+    /// Провода платы (borrowed от Board). Пустой срез = чип вне платы.
+    wires: []Board.Wire = &.{},
+    /// pN чипа → индекс в wires. null = пин никуда не подключён:
+    /// чтение даёт 0, запись уходит в никуда (как в игре).
+    pin_map: [6]?usize = .{null} ** 6,
+    /// Board.time, начиная с которого машина снова готова. Ведёт Board.
+    wake_time: u64 = 0,
+    /// true после того как runSlice дошёл до конца программы.
+    halted: bool = false,
 
     pub fn init(program: Simulator.Program, has_dat: bool) Machine {
         return .{
@@ -149,6 +176,42 @@ pub const Machine = struct {
         self.cpu.pc += 1;
         self.cycles += 1;
         if (self.trace) self.printTrace(@tagName(instr.op), self.cpu.pc - 1);
+    }
+
+    /// Чтение операнда с учётом проводов: .port идёт через pin_map/wires
+    /// (неподключённый пин читается как 0), всё остальное — CpuModule.read.
+    /// После 6.1 ветки .port в CpuModule.read/write и Cpu.ports умирают.
+    pub fn readOperand(self: *Machine, operand: CpuModule.Operand) !i32 {
+        _ = self;
+        _ = operand;
+        return error.NotYetImplemented;
+    }
+
+    /// Запись операнда: .port пишет в провод (clampPort, 0-100),
+    /// неподключённый пин молча глотает значение, остальное — CpuModule.write.
+    pub fn writeOperand(self: *Machine, operand: CpuModule.Operand, value: i32) !void {
+        _ = self;
+        _ = operand;
+        _ = value;
+        return error.NotYetImplemented;
+    }
+
+    /// Исполняет инструкции подряд — весь «кусок» одного time unit — пока:
+    ///  - не исполнится slp N      → return .{ .sleep = N },
+    ///  - PC не уйдёт за конец     → halted = true, return .halted,
+    ///  - не сработает предохранитель max_slice_instructions → error.NeverSleeps.
+    ///
+    /// Каждая исполненная инструкция стоит 1 cycle (пропущенная по условию
+    /// '+'/'-' — 0, как в step()). Сон циклов не стоит: cycles здесь — метрика
+    /// мощности, время живёт на Board. sleep_remaining не используется.
+    /// Вызов на уже halted машине сразу возвращает .halted.
+    ///
+    /// Логику исполнения инструкций бери из step() — switch остаётся тем же,
+    /// только read/write заменяются на self.readOperand/self.writeOperand,
+    /// а slp вместо sleep_remaining делает return.
+    pub fn runSlice(self: *Machine) !Yield {
+        _ = self;
+        return error.NotYetImplemented;
     }
 
     fn printTrace(self: *const Machine, op: []const u8, pc: usize) void {
@@ -624,4 +687,91 @@ test "5.10 gen: port becomes 0 after high phase" {
     try m.step(); // mov 0 p0
     try std.testing.expectEqual(@as(i32, 0), m.cpu.ports[0]);
     try std.testing.expectEqual(@as(u64, 5), m.cycles);
+}
+
+// --- Step 6.0: runSlice — игровая семантика времени ---
+// Один time unit = все инструкции подряд до slp/конца программы.
+// После 6.1 старый step() и тесты 5.7/5.9/5.10 мигрируют на эту модель.
+
+test "6.0 runSlice: straight-line program halts in one slice" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 1 acc\nadd 2");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    const y = try m.runSlice();
+    try std.testing.expect(y == .halted);
+    try std.testing.expect(m.halted);
+    try std.testing.expectEqual(@as(i32, 3), m.cpu.acc);
+    try std.testing.expectEqual(@as(u64, 2), m.cycles); // mov + add
+}
+
+test "6.0 runSlice: slp yields with duration, next slice resumes after it" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 1 acc\nslp 3\nmov 2 acc");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+
+    const y1 = try m.runSlice();
+    try std.testing.expectEqual(@as(u32, 3), y1.sleep);
+    try std.testing.expectEqual(@as(i32, 1), m.cpu.acc);
+    try std.testing.expectEqual(@as(u64, 2), m.cycles); // mov + slp; сон бесплатен
+    try std.testing.expect(!m.halted);
+
+    const y2 = try m.runSlice();
+    try std.testing.expect(y2 == .halted);
+    try std.testing.expectEqual(@as(i32, 2), m.cpu.acc);
+    try std.testing.expectEqual(@as(u64, 3), m.cycles);
+}
+
+test "6.0 runSlice: loop without slp fails loudly" {
+    const parsed = try Parser.parse(std.testing.allocator, "loop:\nnop\njmp loop");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    try std.testing.expectError(error.NeverSleeps, m.runSlice());
+}
+
+test "6.0 runSlice: already-halted machine stays halted" {
+    const parsed = try Parser.parse(std.testing.allocator, "nop");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    _ = try m.runSlice();
+    const y = try m.runSlice();
+    try std.testing.expect(y == .halted);
+    try std.testing.expectEqual(@as(u64, 1), m.cycles); // второй вызов ничего не исполнил
+}
+
+test "6.0 runSlice: unconnected port reads 0, write is discarded" {
+    const parsed = try Parser.parse(std.testing.allocator, "mov 42 p0\nmov p0 acc\nmov 1 acc\nmov p1 acc");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false); // pin_map весь null — чип вне платы
+    const y = try m.runSlice();
+    try std.testing.expect(y == .halted);
+    try std.testing.expectEqual(@as(i32, 0), m.cpu.acc); // p1 читается как 0
+}
+
+test "6.0 runSlice: conditional flags survive across slices" {
+    const parsed = try Parser.parse(std.testing.allocator, "teq 5 5\nslp 1\n+ mov 1 acc\n- mov 2 acc");
+    defer parsed.deinit(std.testing.allocator);
+    var program = try Simulator.build(std.testing.allocator, parsed);
+    defer program.deinit(std.testing.allocator);
+
+    var m = Machine.init(program, false);
+    const y1 = try m.runSlice();
+    try std.testing.expectEqual(@as(u32, 1), y1.sleep);
+    const y2 = try m.runSlice();
+    try std.testing.expect(y2 == .halted);
+    try std.testing.expectEqual(@as(i32, 1), m.cpu.acc); // '+' исполнился после сна
 }
